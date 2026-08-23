@@ -65,8 +65,16 @@
     align-items:center;
     justify-content:space-between;
     gap:10px;
+    position:relative;
   }
-  .brand{display:flex;align-items:center;gap:10px;}
+  .topbar-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    position:relative;
+    min-width:0;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
   .brand-mark{
     font-family:var(--font-display);
     font-weight:700;
@@ -91,7 +99,7 @@
     font-size:0.68rem;
     color:var(--chalk-dim);
   }
-  .topbar-actions{display:flex;align-items:center;gap:8px;}
+  .topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .icon-btn, .ghost-btn{
     border-radius:10px;
     border:1.5px solid var(--chalk-faint);
@@ -105,6 +113,7 @@
     font-family:var(--font-display);
     font-weight:700;
     font-size:0.95rem;
+    flex-shrink:0;
   }
   .ghost-btn{
     padding:8px 12px;
@@ -114,6 +123,75 @@
   }
   .icon-btn:hover, .ghost-btn:hover{ background:rgba(244,241,228,0.12); border-color:rgba(244,241,228,0.35); }
   .icon-btn:active, .ghost-btn:active{ transform: scale(0.94); }
+
+  /* ---------- Burger menu (side drawer) ---------- */
+  .menu-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(10,20,17,0.72);
+    backdrop-filter: blur(1px);
+    z-index:60;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  .menu-drawer{
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    width:min(78vw, 300px);
+    background:var(--bg-board-2);
+    border-right:1.5px dashed rgba(244,241,228,0.35);
+    box-shadow:14px 0 40px rgba(0,0,0,0.5);
+    z-index:61;
+    display:flex;
+    flex-direction:column;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.3,.8,.4,1);
+  }
+  .menu-drawer.open{ transform:translateX(0); }
+  .menu-drawer-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 14px 12px;
+    border-bottom:1.5px dashed rgba(244,241,228,0.2);
+    flex-shrink:0;
+  }
+  .menu-drawer-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:1rem;
+    color:var(--chalk);
+  }
+  .menu-drawer-body{
+    display:flex;
+    flex-direction:column;
+    padding:8px;
+    gap:2px;
+    overflow-y:auto;
+  }
+  /* Each row is a "tab" — sized and iconed so more can be stacked here later
+     (e.g. stats, credits) without restyling. */
+  .menu-tab{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    color:var(--chalk);
+    font-family:var(--font-body);
+    font-size:0.88rem;
+    font-weight:600;
+    padding:13px 12px;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    transition: background .15s ease;
+  }
+  .menu-tab:hover, .menu-tab:active{ background:rgba(244,241,228,0.1); }
+  .menu-tab-icon{ font-size:1.1rem; flex-shrink:0; width:24px; text-align:center; }
 
   /* ---------- Stage ---------- */
   .stage-wrap{
@@ -566,6 +644,43 @@
   .help-card li b{ color:var(--accent-mint); }
   .help-card .primary-btn{ display:block; margin:0 auto; }
 
+  /* ---------- Settings ---------- */
+  .settings-card{ text-align:center; }
+  .settings-row{ margin-bottom:6px; }
+  .settings-label{ font-size:0.85rem; color:var(--chalk); margin-bottom:14px; }
+  .stepper{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:20px;
+  }
+  .stepper-btn{
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1.5px solid var(--chalk-faint);
+    background:rgba(244,241,228,0.06);
+    color:var(--chalk);
+    font-size:1.3rem;
+    font-family:var(--font-display);
+    font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .stepper-btn:active{ transform:scale(0.9); }
+  .stepper-btn:disabled{ opacity:0.35; cursor:default; }
+  .stepper-btn:disabled:active{ transform:none; }
+  .stepper-value{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:1.6rem;
+    color:var(--accent-yellow);
+    min-width:2.2ch;
+    text-align:center;
+  }
+  .settings-hint{ font-size:0.7rem; color:var(--chalk-dim); margin-top:12px; }
+  .settings-card .primary-btn{ display:block; margin:22px auto 0; }
+
   /* ---------- Shop ---------- */
   .shop-btn{
     position:fixed;
@@ -724,11 +839,14 @@
 
 <div class="board">
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">∪</span>
-      <div class="brand-text">
-        <h1>Math Card Game</h1>
-        <p>ฝึกดำเนินการระหว่างวัตถุทางคณิตศาสตร์แบบเกมการ์ด</p>
+    <div class="topbar-left">
+      <button id="menuBtn" class="icon-btn" aria-label="เมนู" aria-haspopup="true" aria-expanded="false">☰</button>
+      <div class="brand">
+        <span class="brand-mark">∪</span>
+        <div class="brand-text">
+          <h1>Math Card Game</h1>
+          <p>ฝึกดำเนินการระหว่างวัตถุทางคณิตศาสตร์แบบเกมการ์ด</p>
+        </div>
       </div>
     </div>
     <div class="topbar-actions">
@@ -827,6 +945,36 @@
   </div>
 </div>
 
+<div class="menu-backdrop" id="menuBackdrop" hidden></div>
+<nav class="menu-drawer" id="menuDrawer" aria-hidden="true">
+  <div class="menu-drawer-header">
+    <span class="menu-drawer-title">เมนู</span>
+    <button type="button" class="icon-btn" id="menuDrawerClose" aria-label="ปิดเมนู">✕</button>
+  </div>
+  <div class="menu-drawer-body">
+    <button type="button" class="menu-tab" id="menuSettingsBtn">
+      <span class="menu-tab-icon" aria-hidden="true">⚙️</span>
+      <span class="menu-tab-label">ตั้งค่า</span>
+    </button>
+  </div>
+</nav>
+
+<div class="help-overlay" id="settingsOverlay" hidden>
+  <div class="help-card settings-card">
+    <h2>ตั้งค่า</h2>
+    <div class="settings-row">
+      <div class="settings-label">จำนวนการ์ดสูงสุดที่ถือได้บนมือ</div>
+      <div class="stepper">
+        <button type="button" class="stepper-btn" id="handSizeDec" aria-label="ลดจำนวน">−</button>
+        <span class="stepper-value" id="handSizeValue">8</span>
+        <button type="button" class="stepper-btn" id="handSizeInc" aria-label="เพิ่มจำนวน">+</button>
+      </div>
+      <div class="settings-hint">ปรับได้ตั้งแต่ 6 ถึง 12 ใบ</div>
+    </div>
+    <button class="primary-btn" id="settingsClose">เข้าใจแล้ว</button>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script>
 (function(){
@@ -845,14 +993,22 @@
        braces ({ })      -> number -> wraps into a set; set -> wraps into a set of sets
        union (∪)         -> set only
        intersection (∩)  -> set only
-       difference (−)    -> set, number, or matrix
-       plus (+)          -> number or matrix
+       difference (−)    -> set, number, or matrix (matrix operand must be the SAME shape)
+       plus (+)          -> number or matrix (matrix operand must be the SAME shape)
        times (×)         -> number, matrix, or set (Cartesian product);
-                             number×matrix = scalar multiplication (commutative);
-                             matrix×matrix is standard matrix multiplication (NOT commutative)
+                             number×matrix = scalar multiplication (commutative, any shape);
+                             matrix×matrix is standard matrix multiplication (NOT commutative,
+                             requires left.cols === right.rows — see matMulCompatible()).
+                             This is how a 2×1 vector card and a 1×2 row-matrix card combine
+                             into a 2×2 matrix (outer product), and vice versa into a 1×1.
        divide (÷)        -> number only
-       det               -> matrix only
-  */
+       det               -> matrix only, AND must be square (rows === cols) — a 2×1 vector
+                             or 1×2 row matrix has no determinant
+     Matrix object cards are no longer always 2×2: buildDeck() also mints
+     2×1 "vector" cards and 1×2 "row" cards (see OBJECT_VECTOR_COUNT /
+     OBJECT_ROW_MATRIX_COUNT below). All matrix helpers (matAdd/matSub/
+     matMul/matScalarMul/matrixTex/randomMatrixValue) are shape-generic;
+     it's executePlay()'s job to reject mismatched shapes with a toast. */
   /* Card-back description convention (read before adding a new op card):
      By default a card's back shows ONLY its title — no `effect` string
      and no "บทนิยาม" (definition) block in cardBackHTML(). Only add an
@@ -874,22 +1030,29 @@
     det:    { kind:'det',    category:'op',  title:'ดีเทอร์มิแนนต์ (Determinant)', effect:'ของเมทริกซ์ A' }
   };
   /* Fixed recipe of operator cards (type -> copies). Object-card counts
-     are fixed too (OBJECT_SET_COUNT + OBJECT_NUMBER_COUNT + OBJECT_MATRIX_COUNT)
-     so the total pool size is always the same; only the *content* of
-     object cards is randomized. This keeps the draw pile size deterministic. */
+     are fixed too (OBJECT_SET_COUNT + OBJECT_NUMBER_COUNT + OBJECT_MATRIX_COUNT
+     + OBJECT_VECTOR_COUNT + OBJECT_ROW_MATRIX_COUNT) so the total pool size
+     is always the same; only the *content* of object cards is randomized.
+     This keeps the draw pile size deterministic. */
   var OPERATOR_RECIPE = [
     ['na',2], ['braces',2], ['union',2], ['inter',2],
     ['diff',2], ['plus',2], ['times',2], ['divide',1], ['det',2]
   ];
   var OBJECT_SET_COUNT = 6;
   var OBJECT_NUMBER_COUNT = 6;
-  var OBJECT_MATRIX_COUNT = 6; /* includes 1 identity + 1 zero + 4 random, see buildDeck() */
+  var OBJECT_MATRIX_COUNT = 6; /* square 2×2, includes 1 identity + 1 zero + 4 random, see buildDeck() */
+  var OBJECT_VECTOR_COUNT = 4; /* 2×1 column vectors — a vector IS a matrix, see buildDeck() */
+  var OBJECT_ROW_MATRIX_COUNT = 4; /* 1×2 row matrices — lets a vector card × a row card make a 2×2, see buildDeck() */
   var HAND_SIZE = 3;
   /* จำนวนการ์ดสูงสุดที่ถือได้ในมือ — ถ้าจั่วการ์ดแล้วมือมีมากกว่านี้ = แพ้ทันที
-     (ดู triggerGameOver ที่เรียกจาก drawCard) ต้องการปรับเงื่อนไขแพ้แค่แก้ตัวเลขนี้
-     ที่เดียว ข้อความในกล่อง "วิธีเล่น" (help-overlay) จะถูกอัปเดตให้อัตโนมัติจาก
-     ค่านี้ตอนเริ่มเกม (ดู initGame) ไม่ต้องไปแก้ HTML ตรงนั้นเอง */
+     (ดู triggerGameOver ที่เรียกจาก drawCard) ค่าเริ่มต้นตั้งไว้ที่นี่ แต่ผู้เล่น
+     ปรับเองได้ระหว่างเล่นผ่านเมนู ☰ -> ตั้งค่า (ดู setMaxHandSize() ด้านล่าง) ซึ่ง
+     จำกัดช่วงไว้ที่ MIN_HAND_SIZE_SETTING ถึง MAX_HAND_SIZE_SETTING ข้อความในกล่อง
+     "วิธีเล่น" (help-overlay) จะถูกอัปเดตให้อัตโนมัติจากค่านี้เสมอ (ดู
+     syncMaxHandWarnText()) ไม่ต้องไปแก้ HTML ตรงนั้นเอง */
   var MAX_HAND_SIZE = 8;
+  var MIN_HAND_SIZE_SETTING = 6;
+  var MAX_HAND_SIZE_SETTING = 12;
   var COIN_REWARD_UNARY = 1;
   var COIN_REWARD_BINARY = 2;
   /* Shop prices — unary op cards (single operand: n(A), { }, det) cost
@@ -928,56 +1091,82 @@
     return f.den===1 ? f.num : { frac:{ num:f.num, den:f.den } };
   }
 
-  /* ---------------- Matrices (2×2, exact-fraction entries) ----------------
-     Stored as a plain 2×2 array m = [[a,b],[c,d]] where each cell is a
-     reduced fraction {num,den} (den always > 0) — same representation as
-     real-number object cards, and for the same reason: once scalar ×
-     matrix is allowed (see matScalarMul below), entries are no longer
-     guaranteed to stay integers, so cells use exact rational arithmetic
-     to avoid floating-point drift. +, −, × are defined for matrix object
-     cards (÷ is not, since matrix "division" isn't asked for and would
-     need inverses/singularity handling). Addition/subtraction are
-     entrywise; matrix × matrix is true 2×2 matrix multiplication, which
-     — unlike scalar × — is NOT commutative, so callers must respect
-     operand order (see centerFirst handling in executePlay). Scalar ×
-     matrix (matScalarMul) *is* commutative, so no operand-order handling
-     is needed there. */
+  /* ---------------- Matrices (arbitrary rows×cols, exact-fraction entries) ----------------
+     Stored as a plain rows×cols array m = [[...],[...],...] where each
+     cell is a reduced fraction {num,den} (den always > 0) — same
+     representation as real-number object cards, and for the same
+     reason: once scalar × matrix is allowed (see matScalarMul below),
+     entries are no longer guaranteed to stay integers, so cells use
+     exact rational arithmetic to avoid floating-point drift.
+     Originally this game only had square 2×2 matrices, but object
+     cards can now also be a 2×1 column vector or a 1×2 row matrix (a
+     vector IS a matrix, just with one dimension equal to 1), so every
+     helper below works for any rows×cols rather than assuming 2×2.
+     +, −, × are defined for matrix object cards (÷ is not, since matrix
+     "division" isn't asked for and would need inverses/singularity
+     handling). Addition/subtraction require BOTH operands to have the
+     exact same shape (rows and cols); matrix × matrix requires the
+     left operand's column count to equal the right operand's row count
+     (ordinary matrix-multiplication compatibility) and is NOT
+     commutative — even when both happen to be square — so callers must
+     respect operand order (see centerFirst handling in executePlay)
+     AND check matMulCompatible()/matSameShape() before calling matMul/
+     matAdd/matSub. Scalar × matrix (matScalarMul) works on any shape
+     and *is* commutative, so no operand-order or shape check is needed
+     there. Determinant (see the 'det' branch in executePlay) is only
+     defined for SQUARE matrices, so it needs its own shape check too. */
+  function matRows(m){ return m.length; }
+  function matCols(m){ return m[0].length; }
+  function matShapeLabel(m){ return matRows(m) + '×' + matCols(m); }
+  function matSameShape(a,b){ return matRows(a)===matRows(b) && matCols(a)===matCols(b); }
+  function matMulCompatible(a,b){ return matCols(a)===matRows(b); }
   function matAdd(a,b){
-    return [
-      [ fracAdd(a[0][0],b[0][0]), fracAdd(a[0][1],b[0][1]) ],
-      [ fracAdd(a[1][0],b[1][0]), fracAdd(a[1][1],b[1][1]) ]
-    ];
+    return a.map(function(row,i){
+      return row.map(function(cell,j){ return fracAdd(cell, b[i][j]); });
+    });
   }
   function matSub(a,b){
-    return [
-      [ fracSub(a[0][0],b[0][0]), fracSub(a[0][1],b[0][1]) ],
-      [ fracSub(a[1][0],b[1][0]), fracSub(a[1][1],b[1][1]) ]
-    ];
+    return a.map(function(row,i){
+      return row.map(function(cell,j){ return fracSub(cell, b[i][j]); });
+    });
   }
   function matMul(a,b){
-    return [
-      [ fracAdd(fracMul(a[0][0],b[0][0]), fracMul(a[0][1],b[1][0])),
-        fracAdd(fracMul(a[0][0],b[0][1]), fracMul(a[0][1],b[1][1])) ],
-      [ fracAdd(fracMul(a[1][0],b[0][0]), fracMul(a[1][1],b[1][0])),
-        fracAdd(fracMul(a[1][0],b[0][1]), fracMul(a[1][1],b[1][1])) ]
-    ];
+    var rows = matRows(a), inner = matCols(a), cols = matCols(b);
+    var result = [];
+    for(var i=0;i<rows;i++){
+      var row = [];
+      for(var j=0;j<cols;j++){
+        var sum = makeFraction(0,1);
+        for(var k=0;k<inner;k++){
+          sum = fracAdd(sum, fracMul(a[i][k], b[k][j]));
+        }
+        row.push(sum);
+      }
+      result.push(row);
+    }
+    return result;
   }
   /* Scalar × matrix — entrywise multiplication by a real-number fraction.
      Used when × combines a matrix with a real-number object card. */
   function matScalarMul(scalar, m){
-    return [
-      [ fracMul(scalar, m[0][0]), fracMul(scalar, m[0][1]) ],
-      [ fracMul(scalar, m[1][0]), fracMul(scalar, m[1][1]) ]
-    ];
+    return m.map(function(row){
+      return row.map(function(cell){ return fracMul(scalar, cell); });
+    });
   }
   function matrixTex(m){
-    return '\\begin{bmatrix}'+fractionTex(m[0][0])+' & '+fractionTex(m[0][1])+' \\\\ '+fractionTex(m[1][0])+' & '+fractionTex(m[1][1])+'\\end{bmatrix}';
+    var rows = m.map(function(row){ return row.map(fractionTex).join(' & '); });
+    return '\\begin{bmatrix}' + rows.join(' \\\\ ') + '\\end{bmatrix}';
   }
-  function randomMatrixValue(){
-    return [
-      [ makeFraction(randomInt(-4,4),1), makeFraction(randomInt(-4,4),1) ],
-      [ makeFraction(randomInt(-4,4),1), makeFraction(randomInt(-4,4),1) ]
-    ];
+  function randomMatrixValue(rows, cols){
+    var m = [];
+    for(var i=0;i<rows;i++){
+      var row = [];
+      for(var j=0;j<cols;j++){
+        row.push(makeFraction(randomInt(-4,4),1));
+      }
+      m.push(row);
+    }
+    return m;
   }
 
   /* ---------------- Random math objects ---------------- */
@@ -1207,7 +1396,36 @@
         kind: 'matrix',
         category: 'obj',
         title: 'เมทริกซ์',
-        value: { m: randomMatrixValue() }
+        value: { m: randomMatrixValue(2,2) }
+      });
+    }
+    /* Vector object cards: a 2×1 column vector, e.g. [1;2]. A vector IS a
+       matrix (just one column), so kind stays 'matrix' — this reuses every
+       existing matrix rule (+, −, ×, det's square check, etc.) for free.
+       The card back calls out BOTH names since a vector can be read as a
+       matrix, per the title text below. */
+    for(var v=0; v<OBJECT_VECTOR_COUNT; v++){
+      objPile.push({
+        id: nextCardId(),
+        key: 'vector',
+        kind: 'matrix',
+        category: 'obj',
+        title: 'เมทริกซ์ (Matrix) หรือ เวกเตอร์ (Vector)',
+        value: { m: randomMatrixValue(2,1) }
+      });
+    }
+    /* Row-matrix object cards: a 1×2 row, e.g. [2 3]. Plain "เมทริกซ์" label
+       (not called a vector here, unlike the column form above) — added so
+       a 2×1 vector card × a 1×2 row card multiplies into a 2×2 matrix
+       (outer product) that can keep being played on. */
+    for(var rm=0; rm<OBJECT_ROW_MATRIX_COUNT; rm++){
+      objPile.push({
+        id: nextCardId(),
+        key: 'rowmatrix',
+        kind: 'matrix',
+        category: 'obj',
+        title: 'เมทริกซ์',
+        value: { m: randomMatrixValue(1,2) }
       });
     }
     return { op: shuffle(opPile), obj: shuffle(objPile) };
@@ -1222,7 +1440,7 @@
       var f = randomNumberValue();
       return { type:'number', num:f.num, den:f.den };
     }
-    return { type:'matrix', m: randomMatrixValue() };
+    return { type:'matrix', m: randomMatrixValue(2,2) };
   }
 
   function deckTotal(){
@@ -1290,12 +1508,17 @@
 
     document.getElementById('overlay').hidden = true;
     document.getElementById('shopOverlay').hidden = true;
-    /* sync the hand-limit number shown in the help overlay with MAX_HAND_SIZE
-       so there's only one place (the constant above) to change it */
-    var maxHandWarnEl = document.getElementById('maxHandWarn');
-    if(maxHandWarnEl){ maxHandWarnEl.textContent = 'อย่าให้มือเกิน ' + MAX_HAND_SIZE + ' ใบ'; }
+    syncMaxHandWarnText();
     renderAll();
     updateShopAffordability();
+  }
+
+  /* sync the hand-limit number shown in the help overlay with MAX_HAND_SIZE
+     so there's only one place (state, via setMaxHandSize) that needs to
+     change it — called on init AND whenever the settings screen changes it */
+  function syncMaxHandWarnText(){
+    var maxHandWarnEl = document.getElementById('maxHandWarn');
+    if(maxHandWarnEl){ maxHandWarnEl.textContent = 'อย่าให้มือเกิน ' + MAX_HAND_SIZE + ' ใบ'; }
   }
 
   /* ---------------- Rendering ---------------- */
@@ -1554,7 +1777,7 @@
       return numHtml;
     }
     if(card.kind==='matrix'){
-      var matHtml = '<div class="card-back-content"><h3>เมทริกซ์</h3>';
+      var matHtml = '<div class="card-back-content"><h3>'+card.title+'</h3>';
       if(card.specialName){
         matHtml += '<p>'+card.specialName+'</p>';
       }
@@ -1903,8 +2126,80 @@
     toggleToken({type:'center'});
   }
 
+  /* Mirrors every semantic/type guard inside executePlay() below — but
+     read-only: no state mutation, no toast, just true/false. This is
+     what selectionReady() uses to decide whether the play button
+     should even appear, since a syntactically-valid pattern (right
+     operand/operator/operand shape) can still be unplayable for type
+     reasons — e.g. n(A) selected while the board is a number, or ∪
+     while the board is a matrix. Showing the button then hiding a
+     failure behind a toast is exactly the confusing case this avoids,
+     so keep this in sync with executePlay(): every toast+return guard
+     there should have a matching false-returning check here. */
+  function isPatternPlayable(pattern){
+    if(pattern.op==='unary'){
+      var unopCard = tokenCard(pattern.unopToken);
+      if(!unopCard) return false;
+      if(unopCard.kind==='na') return state.center.type==='set';
+      if(unopCard.kind==='braces') return state.center.type==='number' || state.center.type==='set';
+      if(unopCard.kind==='det'){
+        if(state.center.type!=='matrix') return false;
+        return matRows(state.center.m)===matCols(state.center.m);
+      }
+      return false;
+    }
+
+    if(pattern.op==='union' || pattern.op==='intersection'){
+      if(state.center.type!=='set') return false;
+      var setCard = tokenCard(pattern.setToken);
+      return !!setCard && setCard.kind==='set';
+    }
+
+    if(pattern.op==='difference'){
+      var diffOperand = tokenCard(pattern.setToken);
+      if(!diffOperand) return false;
+      if(state.center.type==='set') return diffOperand.kind==='set';
+      if(state.center.type==='number') return diffOperand.kind==='number';
+      if(state.center.type==='matrix'){
+        return diffOperand.kind==='matrix' && matSameShape(state.center.m, diffOperand.value.m);
+      }
+      return false;
+    }
+
+    if(pattern.op==='plus' || pattern.op==='times' || pattern.op==='divide'){
+      var operand = tokenCard(pattern.setToken);
+      if(!operand) return false;
+      if(state.center.type==='matrix'){
+        if(pattern.op==='divide') return false;
+        if(pattern.op==='times' && operand.kind==='number') return true;
+        if(operand.kind!=='matrix') return false;
+        if(pattern.op==='plus') return matSameShape(state.center.m, operand.value.m);
+        var centerFirstM = pattern.centerFirst !== false;
+        var leftM = centerFirstM ? state.center.m : operand.value.m;
+        var rightM = centerFirstM ? operand.value.m : state.center.m;
+        return matMulCompatible(leftM, rightM);
+      }
+      if(state.center.type==='set'){
+        if(pattern.op!=='times') return false;
+        return operand.kind==='set';
+      }
+      if(state.center.type!=='number') return false;
+      if(pattern.op==='times' && operand.kind==='matrix') return true;
+      if(operand.kind!=='number') return false;
+      if(pattern.op==='divide'){
+        var centerFirstD = pattern.centerFirst !== false;
+        var rightD = centerFirstD ? operand.value : state.center;
+        return rightD.num!==0;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   function selectionReady(){
-    return selectionPattern() !== null;
+    var pattern = selectionPattern();
+    return pattern !== null && isPatternPlayable(pattern);
   }
 
   function updatePlayButtonVisibility(){
@@ -1926,7 +2221,7 @@
   function executePlay(){
     if(state.locked) return;
     var pattern = selectionPattern();
-    if(!pattern) return;
+    if(!pattern || !isPatternPlayable(pattern)) return;
 
     if(pattern.op==='unary'){
       var card = tokenCard(pattern.unopToken);
@@ -1951,6 +2246,10 @@
           return;
         }
         var m = state.center.m;
+        if(matRows(m)!==matCols(m)){
+          showToast('หา det ได้เฉพาะเมทริกซ์จัตุรัสเท่านั้น (ขนาด ' + matShapeLabel(m) + ' ไม่ใช่จัตุรัส)');
+          return;
+        }
         var detFrac = fracSub(fracMul(m[0][0], m[1][1]), fracMul(m[0][1], m[1][0]));
         state.center = { type:'number', num: detFrac.num, den: detFrac.den };
         removeFromHand(card.id);
@@ -2011,6 +2310,10 @@
         state.center = { type:'number', num: subResult.num, den: subResult.den };
       } else if(state.center.type==='matrix'){
         if(diffOperand.kind!=='matrix'){ showToast('ใช้ − กับเมทริกซ์ต้องใช้การ์ดเมทริกซ์'); return; }
+        if(!matSameShape(state.center.m, diffOperand.value.m)){
+          showToast('ลบเมทริกซ์ได้เฉพาะขนาดเดียวกัน (' + matShapeLabel(state.center.m) + ' กับ ' + matShapeLabel(diffOperand.value.m) + ')');
+          return;
+        }
         /* subtraction isn't commutative for matrices either, so respect
            click order the same way as the set/number cases above */
         var centerFirstM = pattern.centerFirst !== false;
@@ -2042,6 +2345,10 @@
           }
           var matResult;
           if(pattern.op==='plus'){
+            if(!matSameShape(state.center.m, matOperand.value.m)){
+              showToast('บวกเมทริกซ์ได้เฉพาะขนาดเดียวกัน (' + matShapeLabel(state.center.m) + ' กับ ' + matShapeLabel(matOperand.value.m) + ')');
+              return;
+            }
             matResult = matAdd(state.center.m, matOperand.value.m);
           } else {
             /* matrix multiplication is NOT commutative — centerFirst means
@@ -2049,6 +2356,10 @@
             var centerFirstM2 = pattern.centerFirst !== false;
             var leftM2 = centerFirstM2 ? state.center.m : matOperand.value.m;
             var rightM2 = centerFirstM2 ? matOperand.value.m : state.center.m;
+            if(!matMulCompatible(leftM2, rightM2)){
+              showToast('คูณเมทริกซ์ไม่ได้ ขนาดไม่ตรงกัน (' + matShapeLabel(leftM2) + ' คูณ ' + matShapeLabel(rightM2) + ' ต้องให้จำนวนคอลัมน์ซ้าย = จำนวนแถวขวา)');
+              return;
+            }
             matResult = matMul(leftM2, rightM2);
           }
           state.center = { type:'matrix', m: matResult };
@@ -2185,6 +2496,62 @@
   document.getElementById('shopOverlay').addEventListener('click', function(e){
     if(e.target === e.currentTarget){ e.currentTarget.hidden = true; }
   });
+
+  /* ---------------- Burger menu (side drawer) + settings ----------------
+     The drawer body (.menu-drawer-body) is a plain vertical list of
+     .menu-tab buttons — add more <button class="menu-tab"> rows there
+     (each with its own id + click handler down here) to grow the menu;
+     the drawer itself needs no changes to fit more items. */
+  function openMenuDrawer(){
+    document.getElementById('menuBackdrop').hidden = false;
+    var drawer = document.getElementById('menuDrawer');
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.getElementById('menuBtn').setAttribute('aria-expanded', 'true');
+  }
+  function closeMenuDrawer(){
+    document.getElementById('menuBackdrop').hidden = true;
+    var drawer = document.getElementById('menuDrawer');
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.getElementById('menuBtn').setAttribute('aria-expanded', 'false');
+  }
+  document.getElementById('menuBtn').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(document.getElementById('menuDrawer').classList.contains('open')){
+      closeMenuDrawer();
+    } else {
+      openMenuDrawer();
+    }
+  });
+  document.getElementById('menuDrawerClose').addEventListener('click', closeMenuDrawer);
+  document.getElementById('menuBackdrop').addEventListener('click', closeMenuDrawer);
+  function updateHandSizeStepperUI(){
+    document.getElementById('handSizeValue').textContent = MAX_HAND_SIZE;
+    document.getElementById('handSizeDec').disabled = (MAX_HAND_SIZE<=MIN_HAND_SIZE_SETTING);
+    document.getElementById('handSizeInc').disabled = (MAX_HAND_SIZE>=MAX_HAND_SIZE_SETTING);
+  }
+  function setMaxHandSize(newVal){
+    newVal = Math.max(MIN_HAND_SIZE_SETTING, Math.min(MAX_HAND_SIZE_SETTING, newVal));
+    MAX_HAND_SIZE = newVal;
+    updateHandSizeStepperUI();
+    syncMaxHandWarnText();
+    renderHandCount();
+  }
+  document.getElementById('menuSettingsBtn').addEventListener('click', function(){
+    closeMenuDrawer();
+    updateHandSizeStepperUI();
+    document.getElementById('settingsOverlay').hidden = false;
+  });
+  document.getElementById('settingsClose').addEventListener('click', function(){
+    document.getElementById('settingsOverlay').hidden = true;
+  });
+  document.getElementById('settingsOverlay').addEventListener('click', function(e){
+    if(e.target === e.currentTarget){ e.currentTarget.hidden = true; }
+  });
+  document.getElementById('handSizeDec').addEventListener('click', function(){ setMaxHandSize(MAX_HAND_SIZE-1); });
+  document.getElementById('handSizeInc').addEventListener('click', function(){ setMaxHandSize(MAX_HAND_SIZE+1); });
+
   document.getElementById('stage').addEventListener('click', function(){
     if(state.locked) return;
     toggleCenterSelect();
