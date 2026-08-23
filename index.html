@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>เซตการ์ด — เกมฝึกดำเนินการเซต</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;700&family=Sarabun:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+
+<style>
+  :root{
+    --bg-board:#152E28;
+    --bg-board-2:#1D3F37;
+    --bg-board-3:#12241F;
+    --chalk:#F4F1E4;
+    --chalk-dim:rgba(244,241,228,0.62);
+    --chalk-faint:rgba(244,241,228,0.14);
+    --accent-yellow:#F2C14E;
+    --accent-yellow-ink:#2A2005;
+    --accent-mint:#7FD9B9;
+    --accent-mint-ink:#0B2A22;
+    --accent-coral:#EF6F6C;
+    --card-back:#20443C;
+    --card-front:#F4F1E4;
+    --card-front-ink:#17332C;
+    --shadow:rgba(4,14,11,0.55);
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --font-display:'Kanit','Sarabun',sans-serif;
+    --font-body:'Sarabun',sans-serif;
+    --font-mono:'JetBrains Mono','Courier New',monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--chalk);
+    background:
+      radial-gradient(ellipse 120% 80% at 50% -10%, rgba(255,255,255,0.06), transparent 60%),
+      repeating-linear-gradient(0deg, var(--chalk-faint) 0px, var(--chalk-faint) 1px, transparent 1px, transparent 34px),
+      repeating-linear-gradient(90deg, var(--chalk-faint) 0px, var(--chalk-faint) 1px, transparent 1px, transparent 34px),
+      linear-gradient(160deg, var(--bg-board) 0%, var(--bg-board-3) 100%);
+    -webkit-tap-highlight-color: transparent;
+    overflow:hidden;
+  }
+  button{font-family:inherit;}
+
+  .board{
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+    gap:10px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:1.3rem;
+    color:var(--accent-yellow);
+    background:rgba(242,193,78,0.12);
+    border:1.5px dashed rgba(242,193,78,0.5);
+    border-radius:12px;
+    width:40px;height:40px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .brand-text h1{
+    font-family:var(--font-display);
+    font-size:1.05rem;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .brand-text p{
+    margin:1px 0 0;
+    font-size:0.68rem;
+    color:var(--chalk-dim);
+  }
+  .topbar-actions{display:flex;align-items:center;gap:8px;}
+  .icon-btn, .ghost-btn{
+    border-radius:10px;
+    border:1.5px solid var(--chalk-faint);
+    background:rgba(244,241,228,0.05);
+    color:var(--chalk);
+    cursor:pointer;
+    transition: background .15s ease, transform .15s ease, border-color .15s ease;
+  }
+  .icon-btn{
+    width:34px;height:34px;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:0.95rem;
+  }
+  .ghost-btn{
+    padding:8px 12px;
+    font-size:0.78rem;
+    font-weight:600;
+    font-family:var(--font-body);
+  }
+  .icon-btn:hover, .ghost-btn:hover{ background:rgba(244,241,228,0.12); border-color:rgba(244,241,228,0.35); }
+  .icon-btn:active, .ghost-btn:active{ transform: scale(0.94); }
+
+  /* ---------- Stage ---------- */
+  .stage-wrap{
+    flex:1;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    min-height:0;
+    position:relative;
+    padding-top:2px;
+  }
+  .coin-badge{
+    position:absolute;
+    top:2px;
+    right:4px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:rgba(242,193,78,0.12);
+    border:1.5px dashed rgba(242,193,78,0.45);
+    border-radius:999px;
+    padding:5px 12px 5px 9px;
+    z-index:5;
+  }
+  .coin-icon{ font-size:1rem; line-height:1; }
+  .coin-count{
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:0.9rem;
+    color:var(--accent-yellow);
+    min-width:1ch;
+  }
+  .coin-gain{
+    position:absolute;
+    top:-2px;
+    right:10px;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:0.82rem;
+    color:var(--accent-yellow);
+    opacity:0;
+    pointer-events:none;
+    text-shadow:0 2px 6px rgba(0,0,0,0.5);
+  }
+  .coin-gain.show{ animation: coinFloat 0.95s ease forwards; }
+  @keyframes coinFloat{
+    0%{ opacity:0; transform:translateY(2px) scale(0.8); }
+    18%{ opacity:1; transform:translateY(-4px) scale(1.08); }
+    70%{ opacity:1; transform:translateY(-22px) scale(1); }
+    100%{ opacity:0; transform:translateY(-32px) scale(0.95); }
+  }
+  .stage{
+    position:relative;
+    width:min(84vw, 360px);
+    min-height:96px;
+    padding:16px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    background:var(--card-front);
+    border-radius:var(--radius-md);
+    border-top:5px solid var(--accent-mint);
+    box-shadow: 0 6px 14px var(--shadow);
+    transition: transform .15s ease, box-shadow .3s ease;
+  }
+  .stage:active{ transform:scale(0.97); }
+  .stage:focus-visible{ outline:2px solid var(--accent-yellow); outline-offset:6px; border-radius:var(--radius-md); }
+  .stage.selected{
+    box-shadow: 0 0 0 3px var(--accent-yellow), 0 0 0 13px rgba(242,193,78,0.16), 0 6px 14px var(--shadow);
+  }
+  .stage.burst{ animation: boardPulse .65s ease; }
+  @keyframes boardPulse{
+    0%{ box-shadow: 0 6px 14px var(--shadow); }
+    40%{ box-shadow: 0 0 0 16px rgba(242,193,78,0.22), 0 6px 14px var(--shadow); }
+    100%{ box-shadow: 0 6px 14px var(--shadow); }
+  }
+  .stage-math{
+    font-size: clamp(1.15rem, 5.4vw, 1.85rem);
+    color:var(--card-front-ink);
+    transition: transform .35s cubic-bezier(.34,1.4,.64,1);
+    text-align:center;
+    max-width:100%;
+    overflow-x:auto;
+  }
+  .stage.burst .stage-math{ animation: mathPop .5s ease; }
+  @keyframes mathPop{
+    0%{ transform:scale(0.7); opacity:0.3; }
+    55%{ transform:scale(1.12); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .stage-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .stage-label{
+    font-size:0.68rem;
+    color:var(--chalk-dim);
+    white-space:nowrap;
+    letter-spacing:0.3px;
+    margin-top:6px;
+  }
+  .expr-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    max-width:min(88vw, 420px);
+    margin-top:2px;
+  }
+  .expr-math{
+    font-size: clamp(0.82rem, 4.2vw, 1.05rem);
+    color:var(--chalk);
+    text-align:center;
+  }
+  .warn-red{ color:var(--accent-coral); font-weight:700; }
+
+  /* ---------- Handbar ---------- */
+  .handbar{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+  }
+  .hand-count{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    font-weight:600;
+    color:var(--chalk-dim);
+    letter-spacing:0.2px;
+  }
+  .hand-wrap{
+    position:relative;
+    width:100%;
+    height: clamp(148px, 42vw, 208px);
+    overflow:visible;
+  }
+  .hand{
+    position:absolute;
+    inset:0;
+  }
+
+  /* Bottom zone: deck pile pinned to the left, play button centered in
+     the row. min-height is set to the deck pile's own real rendered
+     height (deck-stack 90px + 5px gap + hint line ~18px ≈ 113px) —
+     previously this was only 64px (sized for the button), so the taller
+     deck silently overflowed *above* this box and quietly ate into the
+     gap above it, which is why cards still touched the deck even after
+     that gap was widened. Fixed height + fixed gap above = the deck's
+     true top edge is now what the gap is actually measured against. */
+  .bottom-row{
+    position:relative;
+    width:100%;
+    min-height:116px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:16px;
+  }
+  .deck-pile{
+    position:absolute;
+    left:0;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    padding:0;
+    touch-action:manipulation;
+  }
+  .deck-stack{ position:relative; width:64px; height:90px; }
+  .deck-card{
+    position:absolute;
+    inset:0;
+    border-radius:var(--radius-sm);
+    background:var(--card-back);
+    border:1.5px solid rgba(244,241,228,0.25);
+    background-image: repeating-linear-gradient(45deg, rgba(244,241,228,0.05) 0 6px, transparent 6px 12px);
+  }
+  .deck-stack .deck-card:nth-child(1){ transform: translate(3px,4px) rotate(2deg); opacity:0.55; }
+  .deck-stack .deck-card:nth-child(2){ transform: translate(1.5px,2px) rotate(-1deg); opacity:0.8; }
+  .deck-card-top{
+    display:flex;align-items:center;justify-content:center;
+    transform:none !important;
+    opacity:1 !important;
+    transition: transform .12s ease;
+  }
+  .deck-pile:active .deck-card-top{ transform: scale(0.93) !important; }
+  .deck-count{
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--accent-yellow);
+  }
+  .deck-hint{ font-size:0.62rem; color:var(--chalk-dim); }
+
+  /* ---------- Card ---------- */
+  .card{
+    position:absolute;
+    left:50%;
+    bottom:0;
+    width: clamp(90px, 25vw, 122px);
+    height: clamp(130px, 35vw, 176px);
+    perspective:900px;
+    cursor:pointer;
+    transform-origin:50% 100%;
+    transform: translate(calc(-50% + var(--tx, 0px)), var(--ty, 0px)) rotate(var(--rot, 0deg));
+    z-index: calc(var(--z, 1));
+    transition: transform .28s cubic-bezier(.2,.9,.3,1.3), filter .2s ease;
+    touch-action:manipulation;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .card:focus-visible{ outline:2px solid var(--accent-yellow); outline-offset:4px; border-radius:var(--radius-md); }
+  .card.selected{
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg));
+    filter: drop-shadow(0 10px 14px rgba(0,0,0,0.45));
+    z-index: calc(var(--z, 1) + 50);
+  }
+  .card.pressing{
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(var(--ty, 0px) - 62px)) rotate(0deg) scale(1.4);
+    filter: drop-shadow(0 20px 28px rgba(0,0,0,0.55));
+    z-index: calc(var(--z, 1) + 100);
+    transition: transform .18s cubic-bezier(.2,.9,.3,1.3), filter .2s ease;
+  }
+  .card.hand-holding{
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(var(--ty, 0px) - 22px)) rotate(var(--rot, 0deg));
+    filter: drop-shadow(0 14px 20px rgba(0,0,0,0.5));
+    z-index: calc(var(--z, 1) + 80);
+    transition: transform .16s cubic-bezier(.2,.9,.3,1.3), filter .2s ease;
+  }
+  .card-inner{
+    position:relative;
+    width:100%; height:100%;
+    transform-style:preserve-3d;
+    transition: transform .5s cubic-bezier(.4,.2,.2,1);
+    border-radius:var(--radius-md);
+    box-shadow: 0 6px 14px var(--shadow);
+  }
+  .card.selected .card-inner{ box-shadow: 0 0 0 2.5px var(--accent-yellow), 0 10px 18px var(--shadow); }
+  .card.pressing .card-inner{ transform: rotateY(180deg); }
+
+  .card-face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    border-radius:var(--radius-md);
+    overflow:hidden;
+  }
+  .card-front{
+    background:var(--card-front);
+    color:var(--card-front-ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-top:5px solid var(--accent-mint);
+  }
+  .card-front.is-op{ border-top-color:var(--accent-yellow); }
+  .card-math{ font-size:1.02rem; }
+  .card-front.is-op .card-math{ font-size:1.28rem; font-weight:600; }
+
+  .card-corner{
+    position:absolute;
+    font-size: clamp(0.62rem, 2.4vw, 0.82rem);
+    line-height:1;
+    color:var(--card-front-ink);
+    pointer-events:none;
+  }
+  .corner-tl{ top:9px; left:8px; }
+  .corner-br{ bottom:6px; right:8px; transform:rotate(180deg); transform-origin:center center; }
+
+  .card-back{
+    background:var(--card-back);
+    color:var(--chalk);
+    transform:rotateY(180deg);
+    padding:9px 8px;
+    display:flex;
+    align-items:center;
+  }
+  .card-back-content{
+    width:100%;
+    max-height:100%;
+    overflow-y:auto;
+    font-size: clamp(0.56rem, 2vw, 0.66rem);
+    line-height:1.35;
+  }
+  .card-back-content h3{
+    font-family:var(--font-display);
+    font-size: clamp(0.66rem, 2.3vw, 0.76rem);
+    margin:0 0 4px;
+    color:var(--accent-mint);
+    font-weight:600;
+  }
+  .card-back-content p{ margin:0 0 3px; color:var(--chalk); }
+  .card-back-content .underline{ text-decoration:underline; font-weight:700; color:var(--accent-yellow); }
+  .card-back-content .back-math{ margin-top:4px; font-size:0.85em; }
+  .blank-back{ width:100%; text-align:center; color:rgba(244,241,228,0.35); font-family:var(--font-display); font-size:1.1rem; font-weight:700; }
+
+  /* ---------- Hand-card hold-to-preview panel ----------
+     Shown while a hand card is being long-pressed. Renders that card's
+     back content large and landscape (wide, not the card's own portrait
+     aspect) so long math definitions wrap less. Anchored to the bottom
+     of .stage-wrap, i.e. flush above the handbar, so a thumb holding a
+     card down in the hand never covers it. */
+  .card-preview{
+    position:absolute;
+    bottom:4px;
+    left:50%;
+    transform:translateX(-50%) scale(0.94);
+    width:min(92vw, 440px);
+    max-height:56vh;
+    background:var(--card-back);
+    border-radius:var(--radius-lg);
+    box-shadow:0 18px 40px rgba(0,0,0,0.55);
+    padding:16px 20px;
+    z-index:90;
+    opacity:0;
+    pointer-events:none;
+    overflow-y:auto;
+    transition: opacity .16s ease, transform .16s ease;
+  }
+  .card-preview.show{
+    opacity:1;
+    transform:translateX(-50%) scale(1);
+  }
+  .card-preview .card-back-content{
+    font-size: clamp(0.82rem, 3.2vw, 0.98rem);
+    line-height:1.55;
+  }
+  .card-preview .card-back-content h3{
+    font-size: clamp(1rem, 3.8vw, 1.2rem);
+    margin-bottom:8px;
+  }
+  .card-preview .card-back-content p{ margin-bottom:6px; }
+  .card-preview .card-back-content .back-math{ margin-top:8px; font-size:1.05em; }
+
+  /* ---------- Play button ----------
+     Sits inside .bottom-row, centered, next to the deck pile on the left.
+     .bottom-row already reserves a fixed height, so toggling the button's
+     [hidden] state never changes anything above it. */
+  .play-slot{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .expr-play-btn{
+    background:var(--accent-yellow);
+    color:var(--accent-yellow-ink);
+    border:none;
+    border-radius:18px;
+    padding:17px 38px;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:0.92rem;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.28), 0 10px 18px rgba(0,0,0,0.35);
+    cursor:pointer;
+    touch-action:manipulation;
+    transition: transform .12s ease, box-shadow .12s ease;
+    animation: floatIn .2s ease;
+  }
+  .expr-play-btn:active{
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.28), 0 3px 8px rgba(0,0,0,0.3);
+  }
+  @keyframes floatIn{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    top:14px;
+    left:50%;
+    transform:translate(-50%,-20px);
+    opacity:0;
+    visibility:hidden;
+    background:var(--accent-coral);
+    color:#2A0E0D;
+    font-weight:600;
+    font-size:0.78rem;
+    padding:9px 16px;
+    border-radius:999px;
+    box-shadow:0 8px 16px rgba(0,0,0,0.4);
+    z-index:50;
+    transition: transform .3s cubic-bezier(.3,.8,.4,1), opacity .3s ease, visibility 0s linear .3s;
+    max-width:86vw;
+    text-align:center;
+  }
+  .toast.show{
+    transform:translate(-50%,0);
+    opacity:1;
+    visibility:visible;
+    transition: transform .3s cubic-bezier(.3,.8,.4,1), opacity .3s ease, visibility 0s linear 0s;
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay, .help-overlay{
+    position:fixed; inset:0;
+    background:rgba(10,20,17,0.82);
+    backdrop-filter: blur(2px);
+    display:flex; align-items:center; justify-content:center;
+    z-index:60;
+    padding:20px;
+  }
+  .overlay-card, .help-card{
+    background:var(--bg-board-2);
+    border:1.5px dashed rgba(244,241,228,0.35);
+    border-radius:var(--radius-lg);
+    padding:26px 22px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    animation: popIn .3s cubic-bezier(.3,.9,.4,1.2);
+  }
+  @keyframes popIn{ from{ opacity:0; transform:scale(0.85);} to{opacity:1; transform:scale(1);} }
+  .overlay-card h2{
+    font-family:var(--font-display);
+    font-size:1.4rem;
+    margin:0 0 8px;
+  }
+  .overlay-card.win h2{ color:var(--accent-mint); }
+  .overlay-card.lose h2{ color:var(--accent-coral); }
+  .overlay-card p{ color:var(--chalk-dim); font-size:0.85rem; margin:0 0 20px; line-height:1.5; }
+  .primary-btn{
+    background:var(--accent-yellow);
+    color:var(--accent-yellow-ink);
+    border:none;
+    border-radius:999px;
+    padding:11px 26px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:0.88rem;
+    cursor:pointer;
+  }
+  .primary-btn:active{ transform:scale(0.95); }
+
+  .help-card{ text-align:left; max-width:380px; }
+  .help-card h2{ font-family:var(--font-display); font-size:1.2rem; margin:0 0 12px; color:var(--accent-yellow); text-align:center; }
+  .help-card ul{ margin:0 0 18px; padding-left:18px; font-size:0.8rem; line-height:1.65; color:var(--chalk); }
+  .help-card li{ margin-bottom:6px; }
+  .help-card li b{ color:var(--accent-mint); }
+  .help-card .primary-btn{ display:block; margin:0 auto; }
+
+  /* ---------- Shop ---------- */
+  .shop-btn{
+    position:fixed;
+    top:50%;
+    left: max(10px, env(safe-area-inset-left));
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--accent-yellow);
+    color:var(--accent-yellow-ink);
+    border:none;
+    border-radius:999px;
+    padding:9px 14px 9px 12px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:0.78rem;
+    box-shadow:0 6px 14px var(--shadow);
+    cursor:pointer;
+    touch-action:manipulation;
+    z-index:6;
+  }
+  .shop-btn:active{ transform:translateY(-50%) scale(0.94); }
+
+  .shop-overlay{
+    position:fixed; inset:0;
+    background:rgba(10,20,17,0.82);
+    backdrop-filter: blur(2px);
+    display:flex; align-items:center; justify-content:center;
+    z-index:60;
+    padding:20px;
+  }
+  .shop-panel{
+    background:var(--bg-board-2);
+    border:1.5px dashed rgba(244,241,228,0.35);
+    border-radius:var(--radius-lg);
+    max-width:400px;
+    width:100%;
+    max-height:min(82vh, 600px);
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    animation: popIn .3s cubic-bezier(.3,.9,.4,1.2);
+    overflow:hidden;
+  }
+  .shop-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:18px 18px 12px;
+    flex-shrink:0;
+  }
+  .shop-header h2{
+    font-family:var(--font-display);
+    font-size:1.15rem;
+    color:var(--accent-yellow);
+    margin:0;
+  }
+  .shop-header-coin{
+    display:flex; align-items:center; gap:5px;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:0.85rem;
+    color:var(--accent-yellow);
+    background:rgba(242,193,78,0.12);
+    border:1.5px dashed rgba(242,193,78,0.45);
+    border-radius:999px;
+    padding:4px 10px;
+    flex-shrink:0;
+  }
+  .shop-list{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:2px 18px;
+    display:flex;
+    flex-direction:column;
+  }
+  .shop-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px dashed rgba(244,241,228,0.16);
+  }
+  .shop-item:last-child{ border-bottom:none; }
+  .card.shop-item-card{
+    position:relative;
+    left:auto;
+    bottom:auto;
+    width:74px;
+    height:106px;
+    flex-shrink:0;
+    transform:none;
+    z-index:auto;
+  }
+  .card.shop-item-card.pressing{ transform:none; }
+  .card.shop-item-card .card-math{ font-size:0.92rem; }
+  .card.shop-item-card .card-front.is-op .card-math{ font-size:1.12rem; }
+  .shop-item-info{ flex:1; min-width:0; }
+  .shop-item-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:0.85rem;
+    color:var(--chalk);
+    margin-bottom:2px;
+  }
+  .shop-item-hint{ font-size:0.64rem; color:var(--chalk-dim); }
+  .shop-buy-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    background:var(--accent-yellow);
+    color:var(--accent-yellow-ink);
+    border:none;
+    border-radius:12px;
+    padding:8px 12px;
+    font-family:var(--font-display);
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+    min-width:60px;
+    touch-action:manipulation;
+  }
+  .shop-buy-btn .shop-price{ font-family:var(--font-mono); font-size:0.7rem; }
+  .shop-buy-btn .shop-buy-label{ font-size:0.76rem; }
+  .shop-buy-btn:active{ transform:scale(0.94); }
+  .shop-buy-btn:disabled{
+    background:rgba(244,241,228,0.12);
+    color:var(--chalk-dim);
+    cursor:not-allowed;
+  }
+  .shop-buy-btn:disabled:active{ transform:none; }
+  .shop-footer{
+    padding:12px 18px 18px;
+    flex-shrink:0;
+  }
+  .shop-footer .primary-btn{ display:block; width:100%; }
+
+  [hidden]{ display:none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  @media (min-width: 720px){
+    .board{ max-width:640px; margin:0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="board">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">∪</span>
+      <div class="brand-text">
+        <h1>Math Card Game</h1>
+        <p>ฝึกดำเนินการระหว่างวัตถุทางคณิตศาสตร์แบบเกมการ์ด</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="helpBtn" class="icon-btn" aria-label="วิธีเล่น">?</button>
+      <button id="restartBtn" class="ghost-btn">เล่นใหม่</button>
+    </div>
+  </header>
+
+  <button type="button" class="shop-btn" id="shopBtn" aria-label="เข้าร้านค้า">🛒 ร้านค้า</button>
+
+  <main class="stage-wrap">
+    <div class="coin-badge" id="coinBadge" aria-label="เหรียญที่สะสมได้">
+      <span class="coin-icon" aria-hidden="true">🪙</span>
+      <span class="coin-count" id="coinCount">0</span>
+      <span class="coin-gain" id="coinGain" aria-hidden="true"></span>
+    </div>
+    <div class="stage-col">
+      <div class="stage" id="stage" tabindex="0" role="button" aria-label="กระดาน แตะเพื่อเลือก">
+        <div class="stage-math" id="centerMath"></div>
+      </div>
+      <div class="stage-label" id="centerLabel">กระดาน</div>
+      <div class="expr-row" id="exprRow" hidden>
+        <div class="expr-math" id="exprMath"></div>
+      </div>
+    </div>
+    <div class="card-preview" id="cardPreview" hidden aria-hidden="true">
+      <div class="card-preview-inner" id="cardPreviewInner"></div>
+    </div>
+  </main>
+
+  <footer class="handbar">
+    <div class="hand-wrap">
+      <div class="hand" id="hand"></div>
+    </div>
+    <div class="hand-count" id="handCount">การ์ดบนมือ 0/0</div>
+    <div class="bottom-row">
+      <button class="deck-pile" id="deckPile" aria-label="แตะเพื่อจั่วการ์ด">
+        <div class="deck-stack">
+          <div class="deck-card"></div>
+          <div class="deck-card"></div>
+          <div class="deck-card deck-card-top"><span class="deck-count" id="deckCount">28</span></div>
+        </div>
+        <span class="deck-hint">แตะเพื่อจั่ว</span>
+      </button>
+      <div class="play-slot" id="playSlot">
+        <button type="button" class="expr-play-btn" id="playBtn" hidden>ใช้การ์ดที่เลือก</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay-card" id="overlayCard">
+    <h2 id="overlayTitle"></h2>
+    <p id="overlayText"></p>
+    <button class="primary-btn" id="overlayRestart">เล่นใหม่</button>
+  </div>
+</div>
+
+<div class="help-overlay" id="helpOverlay" hidden>
+  <div class="help-card">
+    <h2>วิธีเล่น</h2>
+    <ul>
+      <li><b>เป้าหมาย</b> — ใช้การ์ดในมือให้หมดเพื่อชนะ <span class="warn-red" id="maxHandWarn">อย่าให้มือเกิน 8 ใบ</span></li>
+      <!-- ข้อความในสแปน id="maxHandWarn" ด้านบนถูกตั้งค่าจริงโดย JS (ตัวแปร
+           MAX_HAND_SIZE ใน initGame()) ตอนเริ่มเกม ค่าที่พิมพ์ไว้ตรงนี้ใช้แค่
+           เป็นค่าเริ่มต้น/สำรองเผื่อ JS ยังไม่ทำงาน ไม่ต้องแก้เลข 8 ตรงนี้ตรงๆ
+           ให้ไปแก้ที่ MAX_HAND_SIZE แทน -->
+      <li><b>แตะการ์ด</b> ในมือ 1 ครั้งเพื่อ <b>เลือก</b> การ์ดนั้น</li>
+      <li><b>แตะค้าง</b> ที่การ์ดในมือ เพื่อ <b>พลิกดูคำอธิบาย</b> ชั่วคราว ปล่อยมือแล้วกลับด้านหน้าเอง</li>
+      <li>แตะ <b>กระดาน</b> เพื่อเลือกมันเข้าร่วมนิพจน์ได้ด้วย — จะแตะก่อนหรือหลังการ์ดใบอื่นก็ได้ ลำดับที่แตะจะถูกใช้แสดงนิพจน์</li>
+      <li>แตะปุ่ม <b>🛒</b> ทางซ้ายของจอเพื่อเข้า <b>ร้านค้า</b> ใช้เหรียญที่สะสมได้ซื้อการ์ดตัวดำเนินการเพิ่ม การ์ดที่ซื้อจะขึ้นมือทันที</li>
+      <!-- Do NOT add how-to-play items here that explain what individual
+           op/object cards do (e.g. which cards × or ÷ work with, coin
+           values per card, matrix vs set vs number rules). Each card's
+           flip-side (back-math) already documents that card's own rules —
+           duplicating it here just goes stale as cards change. Keep this
+           list to overall game mechanics only (goal, tapping, hand limit). -->
+    </ul>
+    <button class="primary-btn" id="helpClose">เข้าใจแล้ว</button>
+  </div>
+</div>
+
+<div class="shop-overlay" id="shopOverlay" hidden>
+  <div class="shop-panel">
+    <div class="shop-header">
+      <h2>ร้านค้า</h2>
+      <div class="shop-header-coin"><span aria-hidden="true">🪙</span><span id="shopCoinCount">0</span></div>
+    </div>
+    <div class="shop-list" id="shopList"></div>
+    <div class="shop-footer">
+      <button type="button" class="primary-btn" id="shopClose">ปิดร้านค้า</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Card templates ----------------
+     Only OPERATOR cards use fixed templates. Math-OBJECT cards (sets,
+     real numbers, and 2×2 matrices) are generated randomly each game
+     for variety — see randomSetElements() / randomNumberValue() /
+     randomMatrixValue() and buildDeck() below. */
+  /* Operator -> valid center type(s). Kept here in English for future
+     reference, since the in-game card-back text intentionally does NOT
+     state this anymore (players are meant to find it out by trying a
+     card on the board, not read it off the card):
+       na (n(A))        -> set only
+       braces ({ })      -> number -> wraps into a set; set -> wraps into a set of sets
+       union (∪)         -> set only
+       intersection (∩)  -> set only
+       difference (−)    -> set, number, or matrix
+       plus (+)          -> number or matrix
+       times (×)         -> number, matrix, or set (Cartesian product);
+                             number×matrix = scalar multiplication (commutative);
+                             matrix×matrix is standard matrix multiplication (NOT commutative)
+       divide (÷)        -> number only
+       det               -> matrix only
+  */
+  /* Card-back description convention (read before adding a new op card):
+     By default a card's back shows ONLY its title — no `effect` string
+     and no "บทนิยาม" (definition) block in cardBackHTML(). Only add an
+     effect/definition when the user explicitly gives that wording in
+     the same request asking for the card. If they don't mention any
+     description at all, leave the card title-only — do not invent one.
+     (plus/divide are intentionally title-only: ordinary arithmetic
+     doesn't need explaining, same idea as why na/union/etc. used to
+     get full definitions only once the user asked for them.) */
+  var CARD_TEMPLATES = {
+    na:     { kind:'na',     category:'op',  title:'จำนวนสมาชิกของ A', effect:'Effect: แปลงเซต A เป็น n(A)' },
+    braces: { kind:'braces', category:'op',  title:'ปีกกา', effect:'Effect: ใส่ปีกกาแล้วแปลงจำนวนจริงเป็นเซต หรือแปลงเซตเป็นเซตของเซต' },
+    union:  { kind:'union',  category:'op',  title:'ยูเนียน (Union)' },
+    inter:  { kind:'intersection', category:'op', title:'อินเตอร์เซกชัน (Intersection)' },
+    diff:   { kind:'difference', category:'op', title:'ผลต่าง (Difference)' },
+    plus:   { kind:'plus',   category:'op',  title:'บวก (Addition)' },
+    times:  { kind:'times',  category:'op',  title:'คูณ (Multiplication)' },
+    divide: { kind:'divide', category:'op',  title:'หาร (Division)' },
+    det:    { kind:'det',    category:'op',  title:'ดีเทอร์มิแนนต์ (Determinant)', effect:'ของเมทริกซ์ A' }
+  };
+  /* Fixed recipe of operator cards (type -> copies). Object-card counts
+     are fixed too (OBJECT_SET_COUNT + OBJECT_NUMBER_COUNT + OBJECT_MATRIX_COUNT)
+     so the total pool size is always the same; only the *content* of
+     object cards is randomized. This keeps the draw pile size deterministic. */
+  var OPERATOR_RECIPE = [
+    ['na',2], ['braces',2], ['union',2], ['inter',2],
+    ['diff',2], ['plus',2], ['times',2], ['divide',1], ['det',2]
+  ];
+  var OBJECT_SET_COUNT = 6;
+  var OBJECT_NUMBER_COUNT = 6;
+  var OBJECT_MATRIX_COUNT = 6; /* includes 1 identity + 1 zero + 4 random, see buildDeck() */
+  var HAND_SIZE = 3;
+  /* จำนวนการ์ดสูงสุดที่ถือได้ในมือ — ถ้าจั่วการ์ดแล้วมือมีมากกว่านี้ = แพ้ทันที
+     (ดู triggerGameOver ที่เรียกจาก drawCard) ต้องการปรับเงื่อนไขแพ้แค่แก้ตัวเลขนี้
+     ที่เดียว ข้อความในกล่อง "วิธีเล่น" (help-overlay) จะถูกอัปเดตให้อัตโนมัติจาก
+     ค่านี้ตอนเริ่มเกม (ดู initGame) ไม่ต้องไปแก้ HTML ตรงนั้นเอง */
+  var MAX_HAND_SIZE = 8;
+  var COIN_REWARD_UNARY = 1;
+  var COIN_REWARD_BINARY = 2;
+  /* Shop prices — unary op cards (single operand: n(A), { }, det) cost
+     more than binary ones (∪, ∩, −, +, ×, ÷) since a unary card can be
+     played against the center alone, no second operand card needed. */
+  var PRICE_UNARY = 10;
+  var PRICE_BINARY = 5;
+
+  /* ---------------- Fractions (exact rational arithmetic) ----------------
+     Real-number object cards are stored as reduced fractions {num, den}
+     (den always > 0) so +, −, ×, ÷ never suffer floating-point drift. */
+  function gcdInt(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while(b){ var t = b; b = a % b; a = t; }
+    return a || 1;
+  }
+  function makeFraction(num, den){
+    den = den || 1;
+    if(den < 0){ num = -num; den = -den; }
+    var g = gcdInt(num, den);
+    return { num: num/g, den: den/g };
+  }
+  function fracAdd(a,b){ return makeFraction(a.num*b.den + b.num*a.den, a.den*b.den); }
+  function fracSub(a,b){ return makeFraction(a.num*b.den - b.num*a.den, a.den*b.den); }
+  function fracMul(a,b){ return makeFraction(a.num*b.num, a.den*b.den); }
+  function fracDiv(a,b){ return makeFraction(a.num*b.den, a.den*b.num); }
+  function fractionTex(f){
+    if(f.den===1) return String(f.num);
+    var body = '\\frac{'+Math.abs(f.num)+'}{'+f.den+'}';
+    return f.num<0 ? ('-'+body) : body;
+  }
+  /* How a plain number/fraction is stored when wrapped as a set element
+     via the { } card — kept distinct from plain integers already used by
+     set elements so old set logic (union/∩/−) stays untouched. */
+  function fractionToElement(f){
+    return f.den===1 ? f.num : { frac:{ num:f.num, den:f.den } };
+  }
+
+  /* ---------------- Matrices (2×2, exact-fraction entries) ----------------
+     Stored as a plain 2×2 array m = [[a,b],[c,d]] where each cell is a
+     reduced fraction {num,den} (den always > 0) — same representation as
+     real-number object cards, and for the same reason: once scalar ×
+     matrix is allowed (see matScalarMul below), entries are no longer
+     guaranteed to stay integers, so cells use exact rational arithmetic
+     to avoid floating-point drift. +, −, × are defined for matrix object
+     cards (÷ is not, since matrix "division" isn't asked for and would
+     need inverses/singularity handling). Addition/subtraction are
+     entrywise; matrix × matrix is true 2×2 matrix multiplication, which
+     — unlike scalar × — is NOT commutative, so callers must respect
+     operand order (see centerFirst handling in executePlay). Scalar ×
+     matrix (matScalarMul) *is* commutative, so no operand-order handling
+     is needed there. */
+  function matAdd(a,b){
+    return [
+      [ fracAdd(a[0][0],b[0][0]), fracAdd(a[0][1],b[0][1]) ],
+      [ fracAdd(a[1][0],b[1][0]), fracAdd(a[1][1],b[1][1]) ]
+    ];
+  }
+  function matSub(a,b){
+    return [
+      [ fracSub(a[0][0],b[0][0]), fracSub(a[0][1],b[0][1]) ],
+      [ fracSub(a[1][0],b[1][0]), fracSub(a[1][1],b[1][1]) ]
+    ];
+  }
+  function matMul(a,b){
+    return [
+      [ fracAdd(fracMul(a[0][0],b[0][0]), fracMul(a[0][1],b[1][0])),
+        fracAdd(fracMul(a[0][0],b[0][1]), fracMul(a[0][1],b[1][1])) ],
+      [ fracAdd(fracMul(a[1][0],b[0][0]), fracMul(a[1][1],b[1][0])),
+        fracAdd(fracMul(a[1][0],b[0][1]), fracMul(a[1][1],b[1][1])) ]
+    ];
+  }
+  /* Scalar × matrix — entrywise multiplication by a real-number fraction.
+     Used when × combines a matrix with a real-number object card. */
+  function matScalarMul(scalar, m){
+    return [
+      [ fracMul(scalar, m[0][0]), fracMul(scalar, m[0][1]) ],
+      [ fracMul(scalar, m[1][0]), fracMul(scalar, m[1][1]) ]
+    ];
+  }
+  function matrixTex(m){
+    return '\\begin{bmatrix}'+fractionTex(m[0][0])+' & '+fractionTex(m[0][1])+' \\\\ '+fractionTex(m[1][0])+' & '+fractionTex(m[1][1])+'\\end{bmatrix}';
+  }
+  function randomMatrixValue(){
+    return [
+      [ makeFraction(randomInt(-4,4),1), makeFraction(randomInt(-4,4),1) ],
+      [ makeFraction(randomInt(-4,4),1), makeFraction(randomInt(-4,4),1) ]
+    ];
+  }
+
+  /* ---------------- Random math objects ---------------- */
+  function randomInt(min, max){ return min + Math.floor(Math.random()*(max-min+1)); }
+  function randomSetElements(){
+    var pool = [1,2,3,4,5,6,7,8,9];
+    shuffle(pool);
+    var size = randomInt(0,3);
+    return pool.slice(0,size).sort(function(a,b){ return a-b; });
+  }
+  function randomNumberValue(){
+    if(Math.random() < 0.3){
+      var den = randomInt(2,4);
+      var num = randomInt(-9,9);
+      return makeFraction(num, den);
+    }
+    return makeFraction(randomInt(-10,12), 1);
+  }
+
+  /* ---------------- State ---------------- */
+  var state = { hand:[], opDeck:[], objDeck:[], center:null, selected:[], locked:false, coins:0, cardsPlayed:0, coinsEarned:0 };
+  var cardEls = new Map();
+  /* Single source of card ids for the whole game session — buildDeck()
+     uses it while building the two piles, and the shop uses it too when
+     minting a freshly-bought card, so ids never collide between "came
+     from the deck" and "bought from the shop" cards. Reset once per
+     initGame() call (see below), not per buildDeck() call. */
+  var cardUidCounter = 1;
+  function nextCardId(){ return 'c' + (cardUidCounter++); }
+
+  /* ---------------- Helpers ---------------- */
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+    }
+    return arr;
+  }
+  function elementTex(el){
+    if(typeof el === 'number') return String(el);
+    if(el && el.set) return setTex(el.set);
+    if(el && el.frac) return fractionTex(el.frac);
+    if(el && el.pair) return '\\left(' + elementTex(el.pair[0]) + ',\\,' + elementTex(el.pair[1]) + '\\right)';
+    return String(el);
+  }
+  function elementKey(el){
+    if(typeof el === 'number') return 'n:'+el;
+    if(el && el.frac) return 'f:'+el.frac.num+'/'+el.frac.den;
+    return 's:'+elementTex(el);
+  }
+  function elementNumericValue(el){
+    if(typeof el === 'number') return el;
+    if(el && el.frac) return el.frac.num/el.frac.den;
+    return null;
+  }
+  function compareElements(a,b){
+    var va = elementNumericValue(a), vb = elementNumericValue(b);
+    if(va!==null && vb!==null) return va-vb;
+    if(va!==null) return -1;
+    if(vb!==null) return 1;
+    var ta = elementTex(a), tb = elementTex(b);
+    return ta < tb ? -1 : (ta > tb ? 1 : 0);
+  }
+  function setTex(elements){
+    if(!elements || elements.length===0) return '\\varnothing';
+    var sorted = elements.slice().sort(compareElements);
+    return '\\{' + sorted.map(elementTex).join(',\\,') + '\\}';
+  }
+  function cardFrontTex(card){
+    if(card.kind==='na') return 'n(A)';
+    if(card.kind==='det') return '\\det(A)';
+    if(card.kind==='braces') return '\\{\\quad\\}';
+    if(card.kind==='union') return '\\cup';
+    if(card.kind==='intersection') return '\\cap';
+    if(card.kind==='difference') return '-';
+    if(card.kind==='plus') return '+';
+    if(card.kind==='times') return '\\times';
+    if(card.kind==='divide') return '\\div';
+    if(card.kind==='number') return fractionTex(card.value);
+    if(card.kind==='matrix') return matrixTex(card.value.m);
+    return setTex(card.elements); /* set object cards */
+  }
+
+  /* ---------------- Selection tokens ----------------
+     A selection is an ORDERED list of tokens in click order, so we can
+     display and (later) evaluate expressions that depend on order.
+     A token is either {type:'center'} or {type:'card', id}. */
+  function tokenEquals(a,b){
+    if(a.type!==b.type) return false;
+    return a.type==='center' ? true : a.id===b.id;
+  }
+  function tokenIndexInSelected(token){
+    for(var i=0;i<state.selected.length;i++){
+      if(tokenEquals(state.selected[i], token)) return i;
+    }
+    return -1;
+  }
+  function tokenCard(token){
+    return token.type==='card' ? state.hand.find(function(c){ return c.id===token.id; }) : null;
+  }
+  var BINOPS = ['union','intersection','difference','plus','times','divide'];
+  function tokenRole(token){
+    if(token.type==='center') return 'operand';
+    var card = tokenCard(token);
+    if(!card) return null;
+    if(card.kind==='set' || card.kind==='number' || card.kind==='matrix') return 'operand';
+    if(BINOPS.indexOf(card.kind)!==-1) return 'binop';
+    if(card.kind==='na' || card.kind==='braces' || card.kind==='det') return 'unop';
+    return null;
+  }
+  function tokenTex(token){
+    if(token.type==='center'){
+      if(state.center.type==='set') return setTex(state.center.elements);
+      if(state.center.type==='matrix') return matrixTex(state.center.m);
+      return fractionTex(state.center);
+    }
+    var card = tokenCard(token);
+    return card ? cardFrontTex(card) : '';
+  }
+  /* Writing two math symbols back to back (e.g. "12 + -10") isn't
+     standard notation, so a negative real-number operand gets wrapped
+     in parentheses whenever it follows an operator in the displayed
+     expression — "12+(-10)". A negative number leading the whole
+     expression (e.g. "-10 + 5") doesn't need this, since there's no
+     operator directly before it. */
+  function operandDisplayTex(token, isLeading){
+    var tex = tokenTex(token);
+    if(isLeading) return tex;
+    var isNegativeNumber;
+    if(token.type==='center'){
+      isNegativeNumber = state.center.type==='number' && state.center.num<0;
+    } else {
+      var card = tokenCard(token);
+      isNegativeNumber = !!(card && card.kind==='number' && card.value.num<0);
+    }
+    return isNegativeNumber ? ('\\left(' + tex + '\\right)') : tex;
+  }
+  function katexInto(el, tex, displayMode){
+    try{
+      window.katex.render(tex, el, { throwOnError:false, displayMode: !!displayMode });
+    }catch(e){
+      el.textContent = tex;
+    }
+  }
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  /* ---------------- Deck / init ----------------
+     The draw pile is split into two independently-shuffled piles by
+     category — opDeck and objDeck — instead of one single shuffled
+     queue. That split is what makes adaptive drawing possible below:
+     drawCard() looks at how the *hand* is currently balanced and
+     chooses which pile to take the next card from, so a run of bad
+     luck can't keep stuffing the hand with the same category. Total
+     combined pool size is still fixed (operator recipe + fixed
+     object-card counts) — only which pile a card comes from, and the
+     random *content* of object cards, varies. */
+  function buildDeck(){
+    var opPile = [];
+    var objPile = [];
+    OPERATOR_RECIPE.forEach(function(pair){
+      var key = pair[0], count = pair[1];
+      var t = CARD_TEMPLATES[key];
+      for(var i=0;i<count;i++){
+        opPile.push({
+          id: nextCardId(),
+          key: key,
+          kind: t.kind,
+          category: t.category,
+          title: t.title,
+          effect: t.effect
+        });
+      }
+    });
+    for(var s=0;s<OBJECT_SET_COUNT;s++){
+      objPile.push({
+        id: nextCardId(),
+        key: 'set',
+        kind: 'set',
+        category: 'obj',
+        title: 'เซต',
+        elements: randomSetElements()
+      });
+    }
+    for(var n=0;n<OBJECT_NUMBER_COUNT;n++){
+      objPile.push({
+        id: nextCardId(),
+        key: 'number',
+        kind: 'number',
+        category: 'obj',
+        title: 'จำนวนจริง',
+        value: randomNumberValue()
+      });
+    }
+    /* Matrix object cards: fixed identity + zero matrix, the rest random.
+       OBJECT_MATRIX_COUNT must be >= 2 for these two guaranteed cards to fit.
+       specialName is what cardBackHTML() prints as the card's specific name
+       under the plain "เมทริกซ์" type label — ordinary random matrices have
+       no specialName, so they show only the type label. */
+    objPile.push({
+      id: nextCardId(),
+      key: 'matrix',
+      kind: 'matrix',
+      category: 'obj',
+      title: 'เมทริกซ์',
+      specialName: 'เมทริกซ์เอกลักษณ์ (Identity matrix)',
+      value: { m: [[makeFraction(1,1),makeFraction(0,1)],[makeFraction(0,1),makeFraction(1,1)]] }
+    });
+    objPile.push({
+      id: nextCardId(),
+      key: 'matrix',
+      kind: 'matrix',
+      category: 'obj',
+      title: 'เมทริกซ์',
+      specialName: 'เมทริกซ์ศูนย์ (Zero matrix)',
+      value: { m: [[makeFraction(0,1),makeFraction(0,1)],[makeFraction(0,1),makeFraction(0,1)]] }
+    });
+    for(var m=0; m<OBJECT_MATRIX_COUNT-2; m++){
+      objPile.push({
+        id: nextCardId(),
+        key: 'matrix',
+        kind: 'matrix',
+        category: 'obj',
+        title: 'เมทริกซ์',
+        value: { m: randomMatrixValue() }
+      });
+    }
+    return { op: shuffle(opPile), obj: shuffle(objPile) };
+  }
+
+  function randomCenter(){
+    var r = Math.random();
+    if(r < 1/3){
+      return { type:'set', elements: randomSetElements() };
+    }
+    if(r < 2/3){
+      var f = randomNumberValue();
+      return { type:'number', num:f.num, den:f.den };
+    }
+    return { type:'matrix', m: randomMatrixValue() };
+  }
+
+  function deckTotal(){
+    return state.opDeck.length + state.objDeck.length;
+  }
+
+  /* opCount - objCount currently in `hand`. Positive = op-heavy,
+     negative = object-heavy, 0 = balanced. */
+  function handCategoryBalance(hand){
+    var opCount = 0, objCount = 0;
+    hand.forEach(function(c){
+      if(c.category==='op') opCount++; else objCount++;
+    });
+    return opCount - objCount;
+  }
+
+  /* Which pile the next card should come from, given the current
+     hand. Once one category is over-represented in hand by at least
+     HAND_BALANCE_THRESHOLD, force-draw from the other pile (as long
+     as it still has cards left) instead of letting chance decide.
+     Otherwise draw is weighted by how many cards remain in each pile
+     — ordinary "random draw from a shuffled deck" behaviour, so the
+     bias only kicks in once it's actually needed. */
+  var HAND_BALANCE_THRESHOLD = 2;
+  function choosePile(hand){
+    var balance = handCategoryBalance(hand);
+    if(balance >= HAND_BALANCE_THRESHOLD && state.objDeck.length>0) return 'obj';
+    if(balance <= -HAND_BALANCE_THRESHOLD && state.opDeck.length>0) return 'op';
+    if(state.opDeck.length===0) return state.objDeck.length>0 ? 'obj' : null;
+    if(state.objDeck.length===0) return 'op';
+    return (Math.random()*deckTotal() < state.opDeck.length) ? 'op' : 'obj';
+  }
+
+  function drawFromPile(pile){
+    return pile==='op' ? state.opDeck.shift() : state.objDeck.shift();
+  }
+
+  /* Deal the opening hand under the same balance rule as drawCard(),
+     plus a starting guarantee of one card from each pile so the very
+     first hand can't be all-op or all-object. */
+  function dealInitialHand(){
+    var hand = [];
+    if(state.opDeck.length>0) hand.push(state.opDeck.shift());
+    if(state.objDeck.length>0) hand.push(state.objDeck.shift());
+    while(hand.length < HAND_SIZE){
+      var pile = choosePile(hand);
+      if(!pile) break;
+      hand.push(drawFromPile(pile));
+    }
+    return shuffle(hand);
+  }
+
+  function initGame(){
+    cardUidCounter = 1;
+    var piles = buildDeck();
+    state.opDeck = piles.op;
+    state.objDeck = piles.obj;
+    state.hand = dealInitialHand();
+    state.center = randomCenter();
+    state.selected = [];
+    state.locked = false;
+    state.coins = 5;
+    state.cardsPlayed = 0;
+    state.coinsEarned = 0;
+
+    document.getElementById('overlay').hidden = true;
+    document.getElementById('shopOverlay').hidden = true;
+    /* sync the hand-limit number shown in the help overlay with MAX_HAND_SIZE
+       so there's only one place (the constant above) to change it */
+    var maxHandWarnEl = document.getElementById('maxHandWarn');
+    if(maxHandWarnEl){ maxHandWarnEl.textContent = 'อย่าให้มือเกิน ' + MAX_HAND_SIZE + ' ใบ'; }
+    renderAll();
+    updateShopAffordability();
+  }
+
+  /* ---------------- Rendering ---------------- */
+  function renderAll(){
+    renderCenter();
+    renderDeckCount();
+    renderHandFull();
+    updatePlayButtonVisibility();
+    renderExprPreview();
+    updateStageSelectedVisual();
+    renderCoins();
+  }
+
+  /* ---------------- Coins ----------------
+     Coins accumulate as the player successfully plays cards; there's no
+     spending yet, but the running total is tracked and shown so a future
+     in-run "shop" for buying cards can hook into state.coins. */
+  function renderCoins(){
+    document.getElementById('coinCount').textContent = state.coins;
+    var shopCoinEl = document.getElementById('shopCoinCount');
+    if(shopCoinEl) shopCoinEl.textContent = state.coins;
+  }
+  function showCoinGain(n){
+    var el = document.getElementById('coinGain');
+    el.textContent = '+' + n;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+  function awardCoins(n){
+    state.coins += n;
+    state.coinsEarned += n;
+    renderCoins();
+    showCoinGain(n);
+    updateShopAffordability();
+  }
+
+
+  function renderCenter(){
+    var tex = state.center.type==='set' ? setTex(state.center.elements)
+      : state.center.type==='matrix' ? matrixTex(state.center.m)
+      : fractionTex(state.center);
+    katexInto(document.getElementById('centerMath'), tex, true);
+    document.getElementById('centerLabel').textContent = 'กระดาน';
+  }
+
+  /* Figures out whether the current ordered token selection forms a
+     computable expression, and if so, what operation it represents.
+     Returns null when not (yet) computable — e.g. operator before
+     both of its operands. */
+  function selectionPattern(){
+    var toks = state.selected;
+    if(toks.length===0) return null;
+    var roles = toks.map(tokenRole);
+    if(roles.indexOf(null)!==-1) return null;
+
+    var unopIdx = roles.indexOf('unop');
+    if(unopIdx!==-1){
+      if(toks.length===1){
+        return { op:'unary', unopToken: toks[0] };
+      }
+      if(toks.length===2){
+        var other = toks[unopIdx===0 ? 1 : 0];
+        if(other.type==='center'){
+          return { op:'unary', unopToken: toks[unopIdx] };
+        }
+      }
+      return null;
+    }
+
+    /* Explicit 3-token order: operand, operator, operand — one operand
+       must be the center (clicked in either position), the other a
+       hand set card. This is the order-sensitive form. */
+    if(toks.length===3 && roles[0]==='operand' && roles[1]==='binop' && roles[2]==='operand'){
+      var a = toks[0], b = toks[2];
+      var centerCount = (a.type==='center'?1:0) + (b.type==='center'?1:0);
+      var cardOperand = a.type==='card' ? a : (b.type==='card' ? b : null);
+      if(centerCount===1 && cardOperand){
+        var opCard = tokenCard(cardOperand);
+        if(opCard && (opCard.kind==='set' || opCard.kind==='number' || opCard.kind==='matrix')){
+          var binCard = tokenCard(toks[1]);
+          return { op: binCard.kind, opToken: toks[1], setToken: cardOperand, centerFirst: a.type==='center' };
+        }
+      }
+      return null;
+    }
+
+    /* Backward-compatible shortcut: just an operator + an operand card
+       (set or number) from hand, with the center left implicit (not
+       explicitly clicked). */
+    if(toks.length===2){
+      var opTok = null, setTok = null;
+      toks.forEach(function(t){
+        var c = tokenCard(t);
+        if(c && BINOPS.indexOf(c.kind)!==-1) opTok = t;
+        if(c && (c.kind==='set' || c.kind==='number' || c.kind==='matrix')) setTok = t;
+      });
+      if(opTok && setTok){
+        return { op: tokenCard(opTok).kind, opToken: opTok, setToken: setTok, implicitCenter:true, centerFirst:true };
+      }
+    }
+
+    return null;
+  }
+
+  /* selectionPattern() always pairs a hand-card operand (pattern.setToken)
+     against the center — so for a 'times' pattern, a real-number/matrix
+     combination can only be (center matrix, card number) or (center
+     number, card matrix). Detects that case and returns the tex for each
+     side so callers can render "scalar directly against matrix" instead
+     of the usual "left × right" layout — with the real number placed
+     first no matter which side was actually clicked first, and the ×
+     symbol dropped entirely (standard scalar-matrix notation). Returns
+     null when the pattern isn't a scalar/matrix combination. */
+  function scalarMatrixInfo(pattern){
+    if(pattern.op!=='times') return null;
+    var operandCard = tokenCard(pattern.setToken);
+    if(!operandCard) return null;
+    if(state.center.type==='matrix' && operandCard.kind==='number'){
+      return { numberTex: fractionTex(operandCard.value), matrixTex: matrixTex(state.center.m) };
+    }
+    if(state.center.type==='number' && operandCard.kind==='matrix'){
+      return { numberTex: fractionTex(state.center), matrixTex: matrixTex(operandCard.value.m) };
+    }
+    return null;
+  }
+
+  /* Builds the tex for "the expression that is forming" from the current
+     selection, so the player sees e.g. {1} \cup {1,2} before committing —
+     in the exact order the tokens were clicked. */
+  function currentExprTex(){
+    if(state.selected.length===0) return null;
+
+    var pattern = selectionPattern();
+    if(pattern){
+      if(pattern.op==='unary'){
+        var card = tokenCard(pattern.unopToken);
+        if(card.kind==='na'){
+          return state.center.type==='set'
+            ? 'n\\left(' + setTex(state.center.elements) + '\\right)'
+            : 'n(A)';
+        }
+        if(card.kind==='braces'){
+          if(state.center.type==='number') return '\\{' + fractionTex(state.center) + '\\}';
+          if(state.center.type==='set') return '\\{' + setTex(state.center.elements) + '\\}';
+          return '\\{\\quad\\}';
+        }
+        if(card.kind==='det'){
+          return state.center.type==='matrix'
+            ? '\\det\\left(' + matrixTex(state.center.m) + '\\right)'
+            : '\\det(A)';
+        }
+      }
+      if(BINOPS.indexOf(pattern.op)!==-1){
+        var scalarInfo = scalarMatrixInfo(pattern);
+        if(scalarInfo){
+          return scalarInfo.numberTex + scalarInfo.matrixTex;
+        }
+        var opTex = cardFrontTex(tokenCard(pattern.opToken));
+        if(pattern.implicitCenter){
+          var leftTex = state.center.type==='set' ? setTex(state.center.elements)
+            : state.center.type==='matrix' ? matrixTex(state.center.m)
+            : (state.center.type==='number' ? fractionTex(state.center) : 'A');
+          return leftTex + ' ' + opTex + ' ' + operandDisplayTex(pattern.setToken, false);
+        }
+        /* explicit order — render exactly as clicked */
+        return state.selected.map(function(tok, idx){
+          return tokenRole(tok)==='binop' ? tokenTex(tok) : operandDisplayTex(tok, idx===0);
+        }).join(' ');
+      }
+    }
+
+    /* Not (yet) a valid expression — best-effort raw preview in click order */
+    return state.selected.map(function(tok, idx){
+      return tokenRole(tok)==='binop' ? tokenTex(tok) : operandDisplayTex(tok, idx===0);
+    }).join('\\;');
+  }
+
+  function renderExprPreview(){
+    var row = document.getElementById('exprRow');
+    var mathEl = document.getElementById('exprMath');
+    var tex = currentExprTex();
+    if(tex===null){
+      row.hidden = true;
+      mathEl.innerHTML = '';
+      return;
+    }
+    row.hidden = false;
+    katexInto(mathEl, tex, false);
+  }
+
+  function renderDeckCount(){
+    var countEl = document.getElementById('deckCount');
+    var total = deckTotal();
+    countEl.textContent = total;
+    document.getElementById('deckPile').style.opacity = total===0 ? '0.5' : '1';
+  }
+
+  function cardBackHTML(card){
+    if(card.kind==='na' || card.kind==='braces' || card.kind==='det' || card.kind==='plus'){
+      return '<div class="card-back-content"><h3>'+card.title+'</h3>'+
+        (card.effect ? '<p>'+card.effect+'</p>' : '')+
+        '</div>';
+    }
+    if(card.kind==='union'){
+      return '<div class="card-back-content">'+
+        '<h3>'+card.title+'</h3>'+
+        '<p><span class="underline">บทนิยาม</span></p>'+
+        '<p>ให้ A และ B เป็นเซต</p>'+
+        '<div class="back-math" data-unionmath="1"></div>'+
+        '</div>';
+    }
+    if(card.kind==='intersection'){
+      return '<div class="card-back-content">'+
+        '<h3>'+card.title+'</h3>'+
+        '<p><span class="underline">บทนิยาม</span></p>'+
+        '<p>ให้ A และ B เป็นเซต</p>'+
+        '<div class="back-math" data-intermath="1"></div>'+
+        '</div>';
+    }
+    if(card.kind==='difference'){
+      return '<div class="card-back-content">'+
+        '<h3>'+card.title+'</h3>'+
+        '<p><span class="underline">บทนิยาม</span></p>'+
+        '<p>ให้ A และ B เป็นเซต</p>'+
+        '<div class="back-math" data-diffmath="1"></div>'+
+        '</div>';
+    }
+    if(card.kind==='times'){
+      return '<div class="card-back-content">'+
+        '<h3>ผลคูณคาร์ทีเซียน (Cartesian product)</h3>'+
+        '<p><span class="underline">บทนิยาม</span></p>'+
+        '<p>ให้ A และ B เป็นเซต</p>'+
+        '<div class="back-math" data-timessetmath="1"></div>'+
+        '</div>';
+    }
+    if(card.kind==='divide'){
+      return '<div class="card-back-content"><h3>'+card.title+'</h3></div>';
+    }
+    if(card.kind==='set'){
+      var setHtml = '<div class="card-back-content"><h3>เซต</h3>';
+      if(card.elements.length===0){
+        setHtml += '<p>เซตว่าง (Empty set)</p>';
+      }
+      setHtml += '</div>';
+      return setHtml;
+    }
+    if(card.kind==='number'){
+      var numHtml = '<div class="card-back-content"><h3>จำนวนจริง</h3>';
+      if(card.value.num===0){
+        numHtml += '<p>0 (Zero) เอกลักษณ์การบวก</p>';
+      } else if(card.value.num===1 && card.value.den===1){
+        numHtml += '<p>1 (One) เอกลักษณ์การคูณ</p>';
+      }
+      numHtml += '</div>';
+      return numHtml;
+    }
+    if(card.kind==='matrix'){
+      var matHtml = '<div class="card-back-content"><h3>เมทริกซ์</h3>';
+      if(card.specialName){
+        matHtml += '<p>'+card.specialName+'</p>';
+      }
+      matHtml += '</div>';
+      return matHtml;
+    }
+    if(card.title){
+      return '<div class="card-back-content"><h3>'+card.title+'</h3></div>';
+    }
+    return '<div class="card-back-content"><div class="blank-back">∪</div></div>';
+  }
+
+  /* Fills in the KaTeX-rendered definition line(s) on a card BACK face,
+     for whichever binary-operator data-*math placeholder(s) cardBackHTML()
+     put there. Shared by buildCardElement (hand cards) and
+     buildShopCardElement (shop preview cards) so the definition text
+     only lives in one place. */
+  function renderCardBackMath(el){
+    var unionMathEl = el.querySelector('[data-unionmath]');
+    if(unionMathEl){
+      katexInto(unionMathEl, 'A \\cup B = \\{x \\mid x \\in A \\text{ หรือ } x \\in B\\}', false);
+    }
+    var interMathEl = el.querySelector('[data-intermath]');
+    if(interMathEl){
+      katexInto(interMathEl, 'A \\cap B = \\{x \\mid x \\in A \\text{ และ } x \\in B\\}', false);
+    }
+    var diffMathEl = el.querySelector('[data-diffmath]');
+    if(diffMathEl){
+      katexInto(diffMathEl, 'A - B = \\{x \\mid x \\in A \\text{ และ } x \\notin B\\}', false);
+    }
+    var timesSetMathEl = el.querySelector('[data-timessetmath]');
+    if(timesSetMathEl){ katexInto(timesSetMathEl, 'A \\times B = \\{(a,\\,b) \\mid a \\in A \\text{ และ } b \\in B\\}', false); }
+  }
+
+  function showCardPreview(card){
+    var panel = document.getElementById('cardPreview');
+    var inner = document.getElementById('cardPreviewInner');
+    inner.innerHTML = cardBackHTML(card);
+    renderCardBackMath(inner);
+    panel.hidden = false;
+    void panel.offsetWidth;
+    panel.classList.add('show');
+  }
+  function hideCardPreview(){
+    var panel = document.getElementById('cardPreview');
+    panel.classList.remove('show');
+    setTimeout(function(){
+      if(!panel.classList.contains('show')) panel.hidden = true;
+    }, 160);
+  }
+
+  function buildCardElement(card){
+    var el = document.createElement('div');
+    el.className = 'card';
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', 'การ์ด');
+    el.dataset.id = card.id;
+
+    el.innerHTML =
+      '<div class="card-inner">'+
+        '<div class="card-face card-front '+(card.category==='op' ? 'is-op' : 'is-obj')+'">'+
+          '<div class="card-corner corner-tl"></div>'+
+          '<div class="card-math"></div>'+
+          '<div class="card-corner corner-br"></div>'+
+        '</div>'+
+        '<div class="card-face card-back">'+ cardBackHTML(card) +'</div>'+
+      '</div>';
+
+    var frontTex = cardFrontTex(card);
+    var mathEl = el.querySelector('.card-math');
+    katexInto(mathEl, frontTex, false);
+    katexInto(el.querySelector('.corner-tl'), frontTex, false);
+    katexInto(el.querySelector('.corner-br'), frontTex, false);
+    renderCardBackMath(el);
+
+    var pressTimer = null;
+    var isHolding = false;
+    function startHold(){
+      isHolding = true;
+      el.classList.add('hand-holding');
+      showCardPreview(card);
+    }
+    function endHold(){
+      clearTimeout(pressTimer);
+      if(isHolding){
+        isHolding = false;
+        el.classList.remove('hand-holding');
+        hideCardPreview();
+      }
+    }
+    el.addEventListener('pointerdown', function(){
+      if(state.locked) return;
+      pressTimer = setTimeout(startHold, 380);
+    });
+    el.addEventListener('pointerup', function(){
+      var wasHolding = isHolding;
+      endHold();
+      if(state.locked) return;
+      if(!wasHolding){ toggleSelect(card.id); }
+    });
+    el.addEventListener('pointercancel', endHold);
+    el.addEventListener('pointerleave', endHold);
+    el.addEventListener('keydown', function(e){
+      if(state.locked) return;
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        toggleSelect(card.id);
+      }
+    });
+
+    return el;
+  }
+
+  function renderHandFull(){
+    var handEl = document.getElementById('hand');
+    handEl.innerHTML = '';
+    cardEls.clear();
+    state.hand.forEach(function(card){
+      var el = buildCardElement(card);
+      cardEls.set(card.id, el);
+      handEl.appendChild(el);
+    });
+    updateCardVisualStates();
+    layoutHand();
+    renderHandCount();
+  }
+
+  function renderHandCount(){
+    var el = document.getElementById('handCount');
+    if(el) el.textContent = 'การ์ดบนมือ ' + state.hand.length + '/' + MAX_HAND_SIZE;
+  }
+
+  /* ---------------- Shop ----------------
+     Sells operator cards only for now (object cards may be added later —
+     see CARD_TEMPLATES/OPERATOR_RECIPE). The item list is built once from
+     OPERATOR_RECIPE (so a future new operator just needs an entry there,
+     nothing shop-specific to update) and only its buy-button affordance
+     is refreshed afterwards, whenever state.coins changes. */
+  function shopPriceFor(kind){
+    return BINOPS.indexOf(kind)!==-1 ? PRICE_BINARY : PRICE_UNARY;
+  }
+
+  /* A standalone flip-card preview for the shop list — same visual/back
+     content as a hand card (reuses cardFrontTex/cardBackHTML/katexInto/
+     renderCardBackMath), but not selectable and not part of state.hand:
+     it only supports the "hold to see the back, release to flip back"
+     interaction, no tap-to-select and no fanned absolute positioning
+     (overridden by the .shop-item-card CSS class). */
+  function buildShopCardElement(card){
+    var el = document.createElement('div');
+    el.className = 'card shop-item-card';
+    el.tabIndex = 0;
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', (card.title || 'การ์ด') + ' — กดค้างเพื่อดูคำอธิบาย');
+
+    el.innerHTML =
+      '<div class="card-inner">'+
+        '<div class="card-face card-front '+(card.category==='op' ? 'is-op' : 'is-obj')+'">'+
+          '<div class="card-math"></div>'+
+        '</div>'+
+        '<div class="card-face card-back">'+ cardBackHTML(card) +'</div>'+
+      '</div>';
+
+    katexInto(el.querySelector('.card-math'), cardFrontTex(card), false);
+    renderCardBackMath(el);
+
+    var pressTimer = null;
+    var isHolding = false;
+    function startHold(){ isHolding = true; el.classList.add('pressing'); }
+    function endHold(){
+      clearTimeout(pressTimer);
+      if(isHolding){ isHolding = false; el.classList.remove('pressing'); }
+    }
+    el.addEventListener('pointerdown', function(){ pressTimer = setTimeout(startHold, 380); });
+    el.addEventListener('pointerup', endHold);
+    el.addEventListener('pointercancel', endHold);
+    el.addEventListener('pointerleave', endHold);
+    el.addEventListener('keydown', function(e){
+      if((e.key==='Enter' || e.key===' ') && !isHolding){ e.preventDefault(); startHold(); }
+    });
+    el.addEventListener('keyup', function(e){
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); endHold(); }
+    });
+
+    return el;
+  }
+
+  /* Built once — the catalog itself never changes mid-session, only
+     which buy buttons are affordable (see updateShopAffordability). */
+  function renderShopList(){
+    var listEl = document.getElementById('shopList');
+    listEl.innerHTML = '';
+    OPERATOR_RECIPE.forEach(function(pair){
+      var key = pair[0];
+      var t = CARD_TEMPLATES[key];
+      if(t.category!=='op') return;
+      var price = shopPriceFor(t.kind);
+      var previewCard = { key:key, kind:t.kind, category:t.category, title:t.title, effect:t.effect };
+
+      var row = document.createElement('div');
+      row.className = 'shop-item';
+      row.innerHTML =
+        '<div class="shop-item-card-slot"></div>'+
+        '<div class="shop-item-info">'+
+          '<div class="shop-item-title">'+ t.title +'</div>'+
+          '<div class="shop-item-hint">กดค้างที่การ์ดเพื่อดูคำอธิบาย</div>'+
+        '</div>'+
+        '<button type="button" class="shop-buy-btn" data-key="'+key+'" data-price="'+price+'">'+
+          '<span class="shop-price">'+price+' 🪙</span>'+
+          '<span class="shop-buy-label">ซื้อ</span>'+
+        '</button>';
+
+      row.querySelector('.shop-item-card-slot').appendChild(buildShopCardElement(previewCard));
+      row.querySelector('.shop-buy-btn').addEventListener('click', function(){ buyCard(key); });
+      listEl.appendChild(row);
+    });
+    updateShopAffordability();
+  }
+
+  function updateShopAffordability(){
+    document.querySelectorAll('.shop-buy-btn').forEach(function(btn){
+      var price = parseInt(btn.dataset.price, 10);
+      btn.disabled = state.coins < price;
+    });
+  }
+
+  /* Buying mints a brand-new card (via nextCardId(), same id source the
+     deck uses) straight into the hand — it counts as an ordinary hand
+     card from then on, so it can push the hand over MAX_HAND_SIZE just
+     like drawing one normally would. */
+  function buyCard(key){
+    if(state.locked) return;
+    var t = CARD_TEMPLATES[key];
+    if(!t || t.category!=='op') return;
+    var price = shopPriceFor(t.kind);
+    if(state.coins < price){
+      showToast('เหรียญไม่พอ ต้องการ ' + price + ' 🪙');
+      return;
+    }
+    state.coins -= price;
+    renderCoins();
+    state.hand.push({
+      id: nextCardId(),
+      key: key,
+      kind: t.kind,
+      category: t.category,
+      title: t.title,
+      effect: t.effect
+    });
+    renderHandFull();
+    updatePlayButtonVisibility();
+    updateShopAffordability();
+    showToast('ซื้อ "' + t.title + '" แล้ว');
+    if(state.hand.length>MAX_HAND_SIZE){
+      document.getElementById('shopOverlay').hidden = true;
+      triggerGameOver();
+    }
+  }
+
+  /* Positions every card in hand as a fanned stack (rotation + slight
+     arc + horizontal overlap) that always fits the available width
+     without needing to scroll. */
+  /* How far a card's top corner reaches horizontally from its own
+     pivot (bottom-center) once rotated by `deg` degrees. Needed
+     because a rotated card's footprint is wider than the card
+     itself — without this, outer fanned cards can poke past the
+     edge of the screen. */
+  function rotatedHalfReach(deg, w, h){
+    var th = deg*Math.PI/180;
+    var xRight = (w/2)*Math.cos(th) + h*Math.sin(th);
+    var xLeft = h*Math.sin(th) - (w/2)*Math.cos(th);
+    return Math.max(Math.abs(xRight), Math.abs(xLeft));
+  }
+
+  function layoutHand(){
+    var wrap = document.querySelector('.hand-wrap');
+    var n = state.hand.length;
+    if(!wrap || n===0) return;
+    var containerWidth = wrap.clientWidth;
+    var sampleEl = cardEls.get(state.hand[0].id);
+    var cardWidth = sampleEl ? sampleEl.offsetWidth : 100;
+    var cardHeight = sampleEl ? sampleEl.offsetHeight : 140;
+    var maxSpread = Math.min(28, 6*(n-1));
+    var rotStep = n>1 ? maxSpread/(n-1) : 0;
+    var arcDepth = 16;
+    var mid = (n-1)/2;
+    var naturalStep = cardWidth*0.66;
+    var step = naturalStep;
+    if(n>1){
+      var edgeReach = rotatedHalfReach(maxSpread/2, cardWidth, cardHeight);
+      var sideMargin = 8;
+      var availableHalf = containerWidth/2 - sideMargin - edgeReach;
+      var maxStep = Math.max(0, availableHalf/mid);
+      step = Math.max(6, Math.min(naturalStep, maxStep));
+    }
+    state.hand.forEach(function(card, i){
+      var el = cardEls.get(card.id);
+      if(!el) return;
+      var rot = n>1 ? (-maxSpread/2 + i*rotStep) : 0;
+      var tx = (i-mid)*step;
+      var normalized = mid>0 ? (i-mid)/mid : 0;
+      var ty = arcDepth*(normalized*normalized);
+      el.style.setProperty('--rot', rot.toFixed(2)+'deg');
+      el.style.setProperty('--tx', tx.toFixed(1)+'px');
+      el.style.setProperty('--ty', ty.toFixed(1)+'px');
+      el.style.setProperty('--z', String(i+1));
+    });
+  }
+
+  function updateCardVisualStates(){
+    cardEls.forEach(function(el, id){
+      var card = state.hand.find(function(c){ return c.id===id; });
+      if(!card) return;
+      el.classList.toggle('selected', tokenIndexInSelected({type:'card', id:id})!==-1);
+    });
+  }
+
+  function updateStageSelectedVisual(){
+    document.getElementById('stage').classList.toggle('selected', tokenIndexInSelected({type:'center'})!==-1);
+  }
+
+  /* ---------------- Interaction logic ---------------- */
+  function toggleToken(token){
+    var idx = tokenIndexInSelected(token);
+    if(idx!==-1){
+      state.selected = state.selected.filter(function(t,i){ return i!==idx; });
+    } else if(state.selected.length>=3){
+      state.selected = [token];
+    } else {
+      state.selected = state.selected.concat([token]);
+    }
+    updateCardVisualStates();
+    updateStageSelectedVisual();
+    updatePlayButtonVisibility();
+    renderExprPreview();
+  }
+
+  function toggleSelect(id){
+    var card = state.hand.find(function(c){ return c.id===id; });
+    if(!card) return;
+    toggleToken({type:'card', id:id});
+  }
+
+  function toggleCenterSelect(){
+    toggleToken({type:'center'});
+  }
+
+  function selectionReady(){
+    return selectionPattern() !== null;
+  }
+
+  function updatePlayButtonVisibility(){
+    document.getElementById('playBtn').hidden = !selectionReady();
+  }
+
+  function removeFromHand(id){
+    state.hand = state.hand.filter(function(c){ return c.id!==id; });
+    state.cardsPlayed += 1;
+  }
+
+  function triggerBurst(){
+    var stage = document.getElementById('stage');
+    stage.classList.remove('burst');
+    void stage.offsetWidth;
+    stage.classList.add('burst');
+  }
+
+  function executePlay(){
+    if(state.locked) return;
+    var pattern = selectionPattern();
+    if(!pattern) return;
+
+    if(pattern.op==='unary'){
+      var card = tokenCard(pattern.unopToken);
+      if(card.kind==='na'){
+        if(state.center.type!=='set'){ showToast('ใช้ n(A) ได้เฉพาะตอนกระดานเป็นเซต'); return; }
+        state.center = { type:'number', num: state.center.elements.length, den:1 };
+        removeFromHand(card.id);
+      } else if(card.kind==='braces'){
+        if(state.center.type==='number'){
+          state.center = { type:'set', elements:[ fractionToElement(state.center) ] };
+          removeFromHand(card.id);
+        } else if(state.center.type==='set'){
+          state.center = { type:'set', elements:[ { set: state.center.elements.slice() } ] };
+          removeFromHand(card.id);
+        } else {
+          showToast('ใช้ { } ได้เฉพาะตอนกระดานเป็นจำนวนหรือเซต');
+          return;
+        }
+      } else if(card.kind==='det'){
+        if(state.center.type!=='matrix'){
+          showToast('ใช้ det(A) ได้เฉพาะตอนกระดานเป็นเมทริกซ์');
+          return;
+        }
+        var m = state.center.m;
+        var detFrac = fracSub(fracMul(m[0][0], m[1][1]), fracMul(m[0][1], m[1][0]));
+        state.center = { type:'number', num: detFrac.num, den: detFrac.den };
+        removeFromHand(card.id);
+      }
+    } else if(pattern.op==='union' || pattern.op==='intersection'){
+      var opSymbol = pattern.op==='union' ? '∪' : '∩';
+      if(state.center.type!=='set'){ showToast('ใช้ ' + opSymbol + ' ได้เฉพาะตอนกระดานเป็นเซต'); return; }
+      var setCard = tokenCard(pattern.setToken);
+      if(setCard.kind!=='set'){ showToast('ใช้ ' + opSymbol + ' ต้องใช้การ์ดเซต'); return; }
+      var resultElements;
+      if(pattern.op==='union'){
+        var merged = state.center.elements.concat(setCard.elements);
+        var seenKeys = {};
+        resultElements = [];
+        merged.forEach(function(el){
+          var key = elementKey(el);
+          if(!seenKeys[key]){ seenKeys[key]=true; resultElements.push(el); }
+        });
+      } else {
+        var otherKeys = {};
+        setCard.elements.forEach(function(el){ otherKeys[elementKey(el)] = true; });
+        var seenKeys2 = {};
+        resultElements = [];
+        state.center.elements.forEach(function(el){
+          var key = elementKey(el);
+          if(otherKeys[key] && !seenKeys2[key]){ seenKeys2[key]=true; resultElements.push(el); }
+        });
+      }
+      resultElements.sort(compareElements);
+      state.center = { type:'set', elements: resultElements };
+      removeFromHand(tokenCard(pattern.opToken).id);
+      removeFromHand(setCard.id);
+    } else if(pattern.op==='difference'){
+      var diffOperand = tokenCard(pattern.setToken);
+      if(state.center.type==='set'){
+        if(diffOperand.kind!=='set'){ showToast('ใช้ − กับเซตต้องใช้การ์ดเซต'); return; }
+        /* difference is order-sensitive: centerFirst means A(center)-B(card),
+           otherwise the card was clicked first, so it's B(card)-A(center) */
+        var centerFirst = pattern.centerFirst !== false;
+        var leftElements = centerFirst ? state.center.elements : diffOperand.elements;
+        var rightElements = centerFirst ? diffOperand.elements : state.center.elements;
+        var rightKeys = {};
+        rightElements.forEach(function(el){ rightKeys[elementKey(el)] = true; });
+        var seenKeys3 = {};
+        var resultElements2 = [];
+        leftElements.forEach(function(el){
+          var key = elementKey(el);
+          if(!rightKeys[key] && !seenKeys3[key]){ seenKeys3[key]=true; resultElements2.push(el); }
+        });
+        resultElements2.sort(compareElements);
+        state.center = { type:'set', elements: resultElements2 };
+      } else if(state.center.type==='number'){
+        if(diffOperand.kind!=='number'){ showToast('ใช้ − กับจำนวนต้องใช้การ์ดจำนวน'); return; }
+        var centerFirstN = pattern.centerFirst !== false;
+        var leftVal = centerFirstN ? state.center : diffOperand.value;
+        var rightVal = centerFirstN ? diffOperand.value : state.center;
+        var subResult = fracSub(leftVal, rightVal);
+        state.center = { type:'number', num: subResult.num, den: subResult.den };
+      } else if(state.center.type==='matrix'){
+        if(diffOperand.kind!=='matrix'){ showToast('ใช้ − กับเมทริกซ์ต้องใช้การ์ดเมทริกซ์'); return; }
+        /* subtraction isn't commutative for matrices either, so respect
+           click order the same way as the set/number cases above */
+        var centerFirstM = pattern.centerFirst !== false;
+        var leftM = centerFirstM ? state.center.m : diffOperand.value.m;
+        var rightM = centerFirstM ? diffOperand.value.m : state.center.m;
+        state.center = { type:'matrix', m: matSub(leftM, rightM) };
+      } else {
+        showToast('ใช้ − ได้เฉพาะตอนกระดานเป็นเซต จำนวน หรือเมทริกซ์');
+        return;
+      }
+      removeFromHand(tokenCard(pattern.opToken).id);
+      removeFromHand(diffOperand.id);
+    } else if(pattern.op==='plus' || pattern.op==='times' || pattern.op==='divide'){
+      var opGlyph = pattern.op==='plus' ? '+' : (pattern.op==='times' ? '×' : '÷');
+      if(state.center.type==='matrix'){
+        if(pattern.op==='divide'){ showToast('ใช้ ÷ กับเมทริกซ์ไม่ได้'); return; }
+        var matOperand = tokenCard(pattern.setToken);
+        if(pattern.op==='times' && matOperand.kind==='number'){
+          /* scalar × matrix — commutative, so operand order doesn't matter */
+          state.center = { type:'matrix', m: matScalarMul(matOperand.value, state.center.m) };
+          removeFromHand(tokenCard(pattern.opToken).id);
+          removeFromHand(matOperand.id);
+        } else {
+          if(matOperand.kind!=='matrix'){
+            var matMsg = pattern.op==='times'
+              ? 'ใช้ × กับเมทริกซ์ต้องใช้การ์ดเมทริกซ์หรือจำนวนจริง'
+              : 'ใช้ ' + opGlyph + ' กับเมทริกซ์ต้องใช้การ์ดเมทริกซ์';
+            showToast(matMsg); return;
+          }
+          var matResult;
+          if(pattern.op==='plus'){
+            matResult = matAdd(state.center.m, matOperand.value.m);
+          } else {
+            /* matrix multiplication is NOT commutative — centerFirst means
+               center × card, otherwise the card was clicked first (card × center) */
+            var centerFirstM2 = pattern.centerFirst !== false;
+            var leftM2 = centerFirstM2 ? state.center.m : matOperand.value.m;
+            var rightM2 = centerFirstM2 ? matOperand.value.m : state.center.m;
+            matResult = matMul(leftM2, rightM2);
+          }
+          state.center = { type:'matrix', m: matResult };
+          removeFromHand(tokenCard(pattern.opToken).id);
+          removeFromHand(matOperand.id);
+        }
+      } else if(state.center.type==='set'){
+        if(pattern.op!=='times'){ showToast('ใช้ ' + opGlyph + ' กับเซตไม่ได้'); return; }
+        var setOperand = tokenCard(pattern.setToken);
+        if(setOperand.kind!=='set'){ showToast('ใช้ × กับเซตต้องใช้การ์ดเซต'); return; }
+        /* Cartesian product isn't commutative in general (A×B ≠ B×A),
+           so respect click order the same way as matrix multiplication above. */
+        var centerFirstS = pattern.centerFirst !== false;
+        var leftSetEls = centerFirstS ? state.center.elements : setOperand.elements;
+        var rightSetEls = centerFirstS ? setOperand.elements : state.center.elements;
+        var productElements = [];
+        leftSetEls.forEach(function(x){
+          rightSetEls.forEach(function(y){
+            productElements.push({ pair: [x, y] });
+          });
+        });
+        state.center = { type:'set', elements: productElements };
+        removeFromHand(tokenCard(pattern.opToken).id);
+        removeFromHand(setOperand.id);
+      } else {
+        if(state.center.type!=='number'){ showToast('ใช้ ' + opGlyph + ' ได้เฉพาะตอนกระดานเป็นจำนวนหรือเมทริกซ์'); return; }
+        var numOperand = tokenCard(pattern.setToken);
+        if(pattern.op==='times' && numOperand.kind==='matrix'){
+          /* real number × matrix (center is the number this time) — same
+             scalar multiplication as the matrix-center branch above,
+             commutative either way */
+          state.center = { type:'matrix', m: matScalarMul(state.center, numOperand.value.m) };
+          removeFromHand(tokenCard(pattern.opToken).id);
+          removeFromHand(numOperand.id);
+        } else {
+          if(numOperand.kind!=='number'){
+            var numMsg = pattern.op==='times'
+              ? 'ใช้ × ต้องใช้การ์ดจำนวนหรือเมทริกซ์'
+              : 'ใช้ ' + opGlyph + ' ต้องใช้การ์ดจำนวน';
+            showToast(numMsg); return;
+          }
+          var arithResult;
+          if(pattern.op==='plus'){
+            arithResult = fracAdd(state.center, numOperand.value);
+          } else if(pattern.op==='times'){
+            arithResult = fracMul(state.center, numOperand.value);
+          } else {
+            var centerFirstD = pattern.centerFirst !== false;
+            var leftD = centerFirstD ? state.center : numOperand.value;
+            var rightD = centerFirstD ? numOperand.value : state.center;
+            if(rightD.num===0){ showToast('หารด้วยศูนย์ไม่ได้'); return; }
+            arithResult = fracDiv(leftD, rightD);
+          }
+          state.center = { type:'number', num: arithResult.num, den: arithResult.den };
+          removeFromHand(tokenCard(pattern.opToken).id);
+          removeFromHand(numOperand.id);
+        }
+      }
+    }
+
+    var earnedCoins = pattern.op==='unary' ? COIN_REWARD_UNARY : COIN_REWARD_BINARY;
+    awardCoins(earnedCoins);
+
+    state.selected = [];
+    triggerBurst();
+    renderCenter();
+    renderHandFull();
+    updatePlayButtonVisibility();
+    renderExprPreview();
+    updateStageSelectedVisual();
+
+    if(state.hand.length===0){ triggerWin(); }
+  }
+
+  function drawCard(){
+    if(state.locked) return;
+    if(deckTotal()===0){ showToast('กองการ์ดหมดแล้ว'); return; }
+    var pile = choosePile(state.hand);
+    var card = drawFromPile(pile);
+    state.hand.push(card);
+    renderDeckCount();
+    renderHandFull();
+    updatePlayButtonVisibility();
+    if(state.hand.length>MAX_HAND_SIZE){ triggerGameOver(); }
+  }
+
+  /* ---------------- Overlays ---------------- */
+  function triggerWin(){
+    state.locked = true;
+    var card = document.getElementById('overlayCard');
+    card.className = 'overlay-card win';
+    document.getElementById('overlayTitle').textContent = 'ชนะแล้ว! 🎉';
+    document.getElementById('overlayText').textContent = 'คุณใช้การ์ดในมือหมดทุกใบแล้ว เก่งมาก! ใช้การ์ดไปทั้งหมด ' + state.cardsPlayed + ' ใบ ได้เงินมา ' + state.coinsEarned + ' เหรียญ';
+    document.getElementById('overlay').hidden = false;
+  }
+  function triggerGameOver(){
+    state.locked = true;
+    var card = document.getElementById('overlayCard');
+    card.className = 'overlay-card lose';
+    document.getElementById('overlayTitle').textContent = 'จบเกม';
+    document.getElementById('overlayText').textContent = 'มือของคุณมีการ์ดเกิน ' + MAX_HAND_SIZE + ' ใบ (' + state.hand.length + ' ใบ) ลองใหม่อีกครั้งนะ ใช้การ์ดไปทั้งหมด ' + state.cardsPlayed + ' ใบ ได้เงินมา ' + state.coinsEarned + ' เหรียญ';
+    document.getElementById('overlay').hidden = false;
+  }
+
+  /* ---------------- Bindings ---------------- */
+  document.getElementById('deckPile').addEventListener('click', drawCard);
+  document.getElementById('playBtn').addEventListener('click', executePlay);
+  document.getElementById('restartBtn').addEventListener('click', initGame);
+  document.getElementById('overlayRestart').addEventListener('click', initGame);
+  document.getElementById('helpBtn').addEventListener('click', function(){ document.getElementById('helpOverlay').hidden = false; });
+  document.getElementById('helpClose').addEventListener('click', function(){ document.getElementById('helpOverlay').hidden = true; });
+  /* Click on the dimmed backdrop (not the card itself) closes the overlay.
+     e.target === currentTarget only when the click landed directly on the
+     backdrop element, since any click inside the card bubbles up with a
+     descendant as its target. */
+  document.getElementById('helpOverlay').addEventListener('click', function(e){
+    if(e.target === e.currentTarget){ e.currentTarget.hidden = true; }
+  });
+  document.getElementById('overlay').addEventListener('click', function(e){
+    if(e.target === e.currentTarget){ initGame(); }
+  });
+  document.getElementById('shopBtn').addEventListener('click', function(e){
+    /* .shop-btn lives inside #stage, which has its own click handler for
+       selecting the center object into an expression — stop it here so
+       opening the shop never also toggles that selection. */
+    e.stopPropagation();
+    if(state.locked) return;
+    updateShopAffordability();
+    document.getElementById('shopOverlay').hidden = false;
+  });
+  document.getElementById('shopClose').addEventListener('click', function(){
+    document.getElementById('shopOverlay').hidden = true;
+  });
+  document.getElementById('shopOverlay').addEventListener('click', function(e){
+    if(e.target === e.currentTarget){ e.currentTarget.hidden = true; }
+  });
+  document.getElementById('stage').addEventListener('click', function(){
+    if(state.locked) return;
+    toggleCenterSelect();
+  });
+  document.getElementById('stage').addEventListener('keydown', function(e){
+    if(state.locked) return;
+    if(e.key==='Enter' || e.key===' '){
+      e.preventDefault();
+      toggleCenterSelect();
+    }
+  });
+  var resizeTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layoutHand, 120);
+  });
+
+  renderShopList();
+  initGame();
+})();
+</script>
+</body>
+</html>
